@@ -94,9 +94,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     state.sys.timeSinceLastFps = 0;
     float fps = 0.0f;
     if (delta != 0) fps = SDL_NS_PER_SECOND / delta;
-    char str[100];
-    SDL_snprintf(str, sizeof(str), "FPS: %.2f (Scene %d)", fps, state.currentScene);
-    SDL_Log(str);
+    SDL_Log("FPS: %.2f (Scene %d)", fps, state.currentScene);
   } else {
     state.sys.timeSinceLastFps += delta;
   }
@@ -154,6 +152,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
   AppState& state = *static_cast<AppState*>(appstate);
   SDL_Log("Closing SDL3");
+
+  // destroy scenes
+  for (Scene* &scene : state.scenes) {
+    scene->destroy();
+    delete scene;
+  }
+  state.scenes.clear();
 
   SDL_ReleaseWindowFromGPUDevice(state.gpu, state.window);
   SDL_DestroyGPUDevice(state.gpu);
