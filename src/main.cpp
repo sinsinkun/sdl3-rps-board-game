@@ -59,9 +59,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDL_EVENT_QUIT:  
       return SDL_APP_SUCCESS;
     case SDL_EVENT_WINDOW_RESIZED:
+      state.sys.winSize.x = event->window.data1;
+      state.sys.winSize.y = event->window.data2;
+      break;
     case SDL_EVENT_KEY_DOWN:
     case SDL_EVENT_KEY_UP:
     case SDL_EVENT_MOUSE_MOTION:
+      state.sys.mousePosScreenSpace = glm::vec2(event->motion.x, event->motion.y);
+      break;
     default:
       break;
   }
@@ -71,6 +76,76 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 // update/render loop
 SDL_AppResult SDL_AppIterate(void *appstate) {
   AppState& state = *static_cast<AppState*>(appstate);
+
+  // ---------------------------------------------
+  // Update logic
+  // ---------------------------------------------
+
+  Uint64 newTime = SDL_GetTicksNS();
+  Uint64 delta = newTime - state.sys.lifetime;
+
+  // forced frame cap (0.1 ms or 10,000 FPS)
+  if (delta < 100001) return SDL_APP_CONTINUE;
+
+  // calculate FPS
+  state.sys.lifetime = newTime;
+  state.sys.deltaTime = (float)delta / (float)SDL_NS_PER_SECOND;
+  if (state.sys.timeSinceLastFps > (SDL_NS_PER_SECOND / 5)) {
+    state.sys.timeSinceLastFps = 0;
+    float fps = 0.0f;
+    if (delta != 0) fps = SDL_NS_PER_SECOND / delta;
+    char str[100];
+    SDL_snprintf(str, sizeof(str), "FPS: %.2f (Scene %d)", fps, state.currentScene);
+    SDL_Log(str);
+  } else {
+    state.sys.timeSinceLastFps += delta;
+  }
+
+  // update scene
+  if (state.scenes.size() > 0 && state.currentScene > -1) {
+    SDL_AppResult res = state.scenes.at(state.currentScene)->update(state.sys);
+    if (res != SDL_APP_CONTINUE) return res;
+  }
+
+  // ---------------------------------------------
+  // Render logic
+  // ---------------------------------------------
+
+  // acquire command buffer
+	SDL_GPUCommandBuffer *cmdBuf = SDL_AcquireGPUCommandBuffer(state.gpu);
+  SDL_InsertGPUDebugLabel(cmdBuf, "Screen Render");
+	// acquire swapchain
+	SDL_GPUTexture* swapchain = NULL;
+	SDL_AcquireGPUSwapchainTexture(cmdBuf, state.window, &swapchain, NULL, NULL);
+	if (swapchain == NULL) {
+		// if swapchain == NULL, its not ready yet - skip render
+		SDL_CancelGPUCommandBuffer(cmdBuf);
+		return SDL_APP_CONTINUE;
+	}
+
+  // clear swapchain
+  SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
+		.texture = swapchain,
+		.clear_color = SDL_FColor{ 0.02f, 0.02f, 0.08f, 1.0f },
+		.load_op = SDL_GPU_LOADOP_CLEAR,
+		.store_op = SDL_GPU_STOREOP_STORE,
+	}, 1, NULL);
+  SDL_EndGPURenderPass(pass);
+
+  // render scene
+  if (state.scenes.size() > 0 && state.currentScene > -1) {
+    SDL_AppResult res = state.scenes.at(state.currentScene)->render(cmdBuf, swapchain);
+    if (res != SDL_APP_CONTINUE) {
+      SDL_CancelGPUCommandBuffer(cmdBuf);
+      return res;
+    }
+  }
+
+  // end render chain
+	if (!SDL_SubmitGPUCommandBuffer(cmdBuf)) {
+		SDL_Log("Failed to submit GPU command %s", SDL_GetError());
+		return SDL_APP_FAILURE;
+	};
 
   return SDL_APP_CONTINUE;
 }
