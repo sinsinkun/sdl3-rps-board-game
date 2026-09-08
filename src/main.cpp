@@ -13,6 +13,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   SDL_SetAppMetadata("RPS Board Game", "0.1", "com.example.rps-board");
   *appstate = new AppState;
   AppState& state = *static_cast<AppState*>(*appstate);
+  state.sys.kbStates = SDL_GetKeyboardState(NULL);
 
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     SDL_Log("SDL_Init(SDL_INIT_VIDEO) failed: %s", SDL_GetError());

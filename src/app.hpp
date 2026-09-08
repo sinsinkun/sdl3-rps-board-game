@@ -6,28 +6,38 @@
 
 namespace App {
   struct SystemUpdates {
-    glm::vec2 mousePosScreenSpace = glm::vec2(0.0f);
     glm::vec2 winSize = glm::vec2(800.0f, 600.0f);
     // fps calculation variables
     Uint64 lifetime = 0;
     float deltaTime = 0.0f;
     Uint64 timeSinceLastFps = 0;
+    // inputs passthrough
+    glm::vec2 mousePosScreenSpace = glm::vec2(0.0f);
+    const bool *kbStates = NULL;
   };
   class Scene {
-    public:
-      virtual SDL_AppResult update(SystemUpdates const &sys) {
-        SDL_Log("ERR: scene update method not overwritten");
-        return SDL_APP_CONTINUE;
-      };
-      virtual SDL_AppResult render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screenTx) {
-        SDL_Log("ERR: scene render method not overwritten");
-        return SDL_APP_CONTINUE;
-      };
-      virtual void destroy() {
-        SDL_Log("ERR: scene destroy method not overwritten");
-      };
-    protected:
-      Scene() {};
+  public:
+    virtual SDL_AppResult update(SystemUpdates const &sys) {
+      SDL_Log("ERR: scene update method not overwritten");
+      return SDL_APP_CONTINUE;
+    };
+    virtual SDL_AppResult render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screenTx) {
+      SDL_Log("ERR: scene render method not overwritten");
+      return SDL_APP_CONTINUE;
+    };
+    virtual void destroy() {
+      SDL_Log("ERR: scene destroy method not overwritten");
+    };
+  protected:
+    Scene() {};
+  };
+  class BoardScene: Scene {
+  public:
+    BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat);
+    SDL_AppResult update(SystemUpdates const &sys) override;
+    SDL_AppResult render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screenTx) override;
+    void destroy() override;
+    // render pipeline
   };
   struct AppState {
     SDL_Window *window = NULL;
