@@ -63,8 +63,6 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
       state.sys.winSize.x = event->window.data1;
       state.sys.winSize.y = event->window.data2;
       break;
-    case SDL_EVENT_KEY_DOWN:
-    case SDL_EVENT_KEY_UP:
     case SDL_EVENT_MOUSE_MOTION:
       state.sys.mousePosScreenSpace = glm::vec2(event->motion.x, event->motion.y);
       break;
