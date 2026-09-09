@@ -9,7 +9,16 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat) : 
     .perspective = false
   };
 
-  int obj1id = gfxPipeline->addObject(Gfx::tube(80.0f, 40.0f, 100.0f, 18));
+  // add objects
+  int obj1id = gfxPipeline->addObject(Gfx::rect2d(80.0f, 80.0f, 0.0f));
+  Gfx::RenderObject& obj1 = gfxPipeline->getMutableObject(obj1id);
+  obj1.pos = glm::vec3(-100.0, 0.0, 0.0);
+  obj1.albedo = Gfx::RED;
+
+  int obj2id = gfxPipeline->addObject(Gfx::rect2d(80.0f, 80.0f, 0.0f));
+  Gfx::RenderObject& obj2 = gfxPipeline->getMutableObject(obj2id);
+  obj2.pos = glm::vec3(100.0, 0.0, 0.0);
+  obj2.albedo = Gfx::GREEN;
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
