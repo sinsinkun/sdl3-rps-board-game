@@ -17,8 +17,13 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat) : 
 
   int obj2id = gfxPipeline->addObject(Gfx::rect2d(80.0f, 80.0f, 0.0f));
   Gfx::RenderObject& obj2 = gfxPipeline->getMutableObject(obj2id);
-  obj2.pos = glm::vec3(100.0, 0.0, 0.0);
+  obj2.pos = glm::vec3(0.0, 0.0, 0.0);
   obj2.albedo = Gfx::GREEN;
+
+  int obj3id = gfxPipeline->addObject(Gfx::rect2d(80.0f, 80.0f, 0.0f));
+  Gfx::RenderObject& obj3 = gfxPipeline->getMutableObject(obj3id);
+  obj3.pos = glm::vec3(100.0, 0.0, 0.0);
+  obj3.albedo = Gfx::BLUE;
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
