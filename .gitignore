@@ -3,3 +3,5 @@
 cmake-build-files
 debug
 release
+
+shaders/SPIRV

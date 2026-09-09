@@ -4,6 +4,8 @@
 #include <SDL3/SDL.h>
 #include <glm/vec2.hpp>
 
+#include "gfx/basicObjectPipeline.hpp"
+
 namespace App {
   struct SystemUpdates {
     glm::vec2 winSize = glm::vec2(800.0f, 600.0f);
@@ -31,19 +33,21 @@ namespace App {
   protected:
     Scene() {};
   };
-  class BoardScene: Scene {
+  class BoardScene: public Scene {
   public:
     BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat);
     SDL_AppResult update(SystemUpdates const &sys) override;
     SDL_AppResult render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screenTx) override;
     void destroy() override;
     // render pipeline
+    Gfx::BasicObjectPipeline *gfxPipeline;
+    glm::vec2 screenSize = glm::vec2(0.0f);
   };
   struct AppState {
     SDL_Window *window = NULL;
     SDL_GPUDevice *gpu = NULL;
     SystemUpdates sys;
     std::vector<Scene*> scenes;
-    int currentScene = 1;
+    int currentScene = 0;
   };
 }

@@ -49,6 +49,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   }
   SDL_Log("Claimed window for GPU device");
 
+  // load scene into memory
+  SDL_GPUTextureFormat scFormat = SDL_GetGPUSwapchainTextureFormat(state.gpu, state.window);
+  BoardScene *scene1 = new BoardScene(state.gpu, scFormat);
+  state.scenes.push_back(scene1);
+
   return SDL_APP_CONTINUE;
 }
 
@@ -100,6 +105,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
   // update scene
   if (state.scenes.size() > 0 && state.currentScene > -1) {
+    if (state.currentScene > state.scenes.size()) {
+      SDL_Log("Tried to access scene index greater than scenes length");
+      return SDL_APP_CONTINUE;
+    }
     SDL_AppResult res = state.scenes.at(state.currentScene)->update(state.sys);
     if (res != SDL_APP_CONTINUE) return res;
   }
@@ -131,6 +140,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
   // render scene
   if (state.scenes.size() > 0 && state.currentScene > -1) {
+    if (state.currentScene > state.scenes.size()) {
+      SDL_Log("Tried to access scene index greater than scenes length");
+      return SDL_APP_CONTINUE;
+    }
     SDL_AppResult res = state.scenes.at(state.currentScene)->render(cmdBuf, swapchain);
     if (res != SDL_APP_CONTINUE) {
       SDL_CancelGPUCommandBuffer(cmdBuf);
@@ -155,7 +168,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
   // destroy scenes
   for (Scene* &scene : state.scenes) {
     scene->destroy();
-    delete scene;
+    SDL_free(scene);
   }
   state.scenes.clear();
 
