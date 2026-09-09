@@ -1,7 +1,7 @@
 # ignore build folders
-
 cmake-build-files
 debug
 release
 
-shaders/SPIRV
+# ignore assets
+assets
