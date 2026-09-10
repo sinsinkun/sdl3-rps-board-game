@@ -47,6 +47,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   }
   SDL_Log("Claimed window for GPU device");
 
+  // load icon
+  state.winIcon = IMG_Load("assets/icon.png");
+  SDL_SetWindowIcon(state.window, state.winIcon);
+
   // initialize text engine
   if (!TTF_Init()) {
     SDL_Log("Failed to initialize SDL_ttf: %s", SDL_GetError());
@@ -188,6 +192,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 
   SDL_ReleaseWindowFromGPUDevice(state.gpu, state.window);
   SDL_DestroyGPUDevice(state.gpu);
+  SDL_DestroySurface(state.winIcon);
   SDL_DestroyWindow(state.window);
 
   SDL_Quit();

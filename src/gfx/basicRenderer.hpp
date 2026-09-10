@@ -14,8 +14,8 @@ namespace Gfx {
       SDL_GPUDevice *gpu,
       Gfx::GPUPrimitiveType type,
       SDL_GPUCullMode cullMode,
-      Uint32 sw,
-      Uint32 sh
+      Uint32 screenWidth,
+      Uint32 screenHeight
     );
     void resizeScreen(Uint32 w, Uint32 h);
     int addObject(std::vector<Gfx::RenderVertex> const &vertices);

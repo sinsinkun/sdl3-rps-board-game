@@ -3,6 +3,7 @@
 #include <vector>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <SDL3_image/SDL_image.h>
 #include <glm/vec2.hpp>
 
 #include "gfx/basicRenderer.hpp"
@@ -47,6 +48,7 @@ namespace App {
   struct AppState {
     SDL_Window *window = NULL;
     SDL_GPUDevice *gpu = NULL;
+    SDL_Surface *winIcon = NULL;
     SystemUpdates sys;
     std::vector<Scene*> scenes;
     TTF_TextEngine *textEngine = NULL;

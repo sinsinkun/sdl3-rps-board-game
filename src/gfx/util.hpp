@@ -7,7 +7,7 @@
 
 namespace Gfx {
   // GPU helpers
-  enum GPUPrimitiveType { PT_Point, PT_Line, PT_Tri };
+  enum GPUPrimitiveType { PT_Point, PT_Line, PT_Triangle };
   struct RenderVertex {
     glm::vec3 pos;
     glm::vec2 uv;
