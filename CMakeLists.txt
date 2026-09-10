@@ -54,18 +54,18 @@ target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_image::SDL3_image-shared)
 
 # ------------------------------------------------------------------------------
-# Copy SDL3.dll to the Output Directory (Windows)
+# Copy dlls and assets to the Output Directory (Windows)
 # ------------------------------------------------------------------------------
 if(WIN32)
     add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
-        # copy dlls to output folder
+        # copy dlls
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:SDL3::SDL3-shared>
             $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared>
             $<TARGET_FILE:SDL3_image::SDL3_image-shared>
             $<TARGET_FILE_DIR:${PROJECT_NAME}>
-        # copy assets to output folder
+        # copy assets
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/assets
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
