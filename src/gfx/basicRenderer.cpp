@@ -3,8 +3,12 @@
 using namespace Gfx;
 
 BasicRenderer::BasicRenderer(
-  SDL_GPUTextureFormat targetFormat, SDL_GPUDevice *gpu,
-  GPUPrimitiveType type, SDL_GPUCullMode cullMode, Uint32 sw, Uint32 sh
+  SDL_GPUTextureFormat targetFormat,
+  SDL_GPUDevice *gpu,
+  GPUPrimitiveType type,
+  SDL_GPUCullMode cullMode,
+  Uint32 sw,
+  Uint32 sh
 ) {
   device = gpu;
   // create shaders
@@ -315,7 +319,7 @@ RenderObject& BasicRenderer::getMutableObject(int id) {
 void BasicRenderer::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target) {
   SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
 		.texture = target,
-		.clear_color = SDL_FColor{ 0.02f, 0.02f, 0.08f, 1.0f },
+		.clear_color = clearColor,
 		.load_op = SDL_GPU_LOADOP_LOAD,
 		.store_op = SDL_GPU_STOREOP_STORE,
 	}, 1, new SDL_GPUDepthStencilTargetInfo {

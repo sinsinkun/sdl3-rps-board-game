@@ -10,8 +10,12 @@ namespace Gfx {
   class BasicRenderer {
   public:
     BasicRenderer(
-      SDL_GPUTextureFormat targetFormat, SDL_GPUDevice *gpu,
-      Gfx::GPUPrimitiveType type, SDL_GPUCullMode cullMode, Uint32 sw, Uint32 sh
+      SDL_GPUTextureFormat targetFormat,
+      SDL_GPUDevice *gpu,
+      Gfx::GPUPrimitiveType type,
+      SDL_GPUCullMode cullMode,
+      Uint32 sw,
+      Uint32 sh
     );
     void resizeScreen(Uint32 w, Uint32 h);
     int addObject(std::vector<Gfx::RenderVertex> const &vertices);
@@ -23,6 +27,7 @@ namespace Gfx {
     void clearAllObjectAssets();
     void destroy();
     Gfx::RenderCamera cam;
+    SDL_FColor clearColor = SDL_FColor{ 0.02f, 0.02f, 0.08f, 1.0f };
   private:
     std::vector<Gfx::RenderObject> renderObjects;
     SDL_GPUDevice *device = NULL;
