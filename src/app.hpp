@@ -5,7 +5,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <glm/vec2.hpp>
 
-#include "gfx/basicObjectPipeline.hpp"
+#include "gfx/basicRenderer.hpp"
 
 namespace App {
   struct SystemUpdates {
@@ -41,7 +41,7 @@ namespace App {
     SDL_AppResult render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screenTx) override;
     void destroy() override;
     // render pipeline
-    Gfx::BasicObjectPipeline *gfxPipeline;
+    Gfx::BasicRenderer *renderer;
     glm::vec2 screenSize = glm::vec2(0.0f);
   };
   struct AppState {
