@@ -142,15 +142,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 		return SDL_APP_CONTINUE;
 	}
 
-  // clear swapchain
-  SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
-		.texture = swapchain,
-		.clear_color = SDL_FColor{ 0.0f, 0.0f, 0.0f, 1.0f },
-		.load_op = SDL_GPU_LOADOP_CLEAR,
-		.store_op = SDL_GPU_STOREOP_STORE,
-	}, 1, NULL);
-  SDL_EndGPURenderPass(pass);
-
   // render scene
   if (state.scenes.size() > 0 && state.currentScene > -1) {
     if (state.currentScene > state.scenes.size()) {
