@@ -6,9 +6,10 @@
 #include "util.hpp"
 
 namespace Gfx {
-  class BasicObjectPipeline {
+  // Basic vertex based renderer with flat coloring (no shadows)
+  class BasicRenderer {
   public:
-    BasicObjectPipeline(
+    BasicRenderer(
       SDL_GPUTextureFormat targetFormat, SDL_GPUDevice *gpu,
       Gfx::GPUPrimitiveType type, SDL_GPUCullMode cullMode, Uint32 sw, Uint32 sh
     );

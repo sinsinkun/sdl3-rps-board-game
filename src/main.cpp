@@ -49,6 +49,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   }
   SDL_Log("Claimed window for GPU device");
 
+  // initialize text engine
+  if (!TTF_Init()) {
+    SDL_Log("Failed to initialize SDL_ttf: %s", SDL_GetError());
+    return SDL_APP_FAILURE;
+  };
+  state.textEngine = TTF_CreateGPUTextEngine(state.gpu);
+  if (state.textEngine == NULL) {
+    SDL_Log("Failed to create text engine: %s", SDL_GetError());
+    return SDL_APP_FAILURE;
+  }
+  SDL_Log("Started text engine");
+
   // load scene into memory
   SDL_GPUTextureFormat scFormat = SDL_GetGPUSwapchainTextureFormat(state.gpu, state.window);
   BoardScene *scene1 = new BoardScene(state.gpu, scFormat);
@@ -171,6 +183,10 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     SDL_free(scene);
   }
   state.scenes.clear();
+
+  // destroy text engine
+  TTF_DestroyGPUTextEngine(state.textEngine);
+  TTF_Quit();
 
   SDL_ReleaseWindowFromGPUDevice(state.gpu, state.window);
   SDL_DestroyGPUDevice(state.gpu);

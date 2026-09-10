@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <glm/vec2.hpp>
 
 #include "gfx/basicObjectPipeline.hpp"
@@ -48,6 +49,7 @@ namespace App {
     SDL_GPUDevice *gpu = NULL;
     SystemUpdates sys;
     std::vector<Scene*> scenes;
+    TTF_TextEngine *textEngine = NULL;
     int currentScene = 0;
   };
 }

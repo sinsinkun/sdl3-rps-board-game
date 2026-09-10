@@ -1,8 +1,8 @@
-#include "basicObjectPipeline.hpp"
+#include "basicRenderer.hpp"
 
 using namespace Gfx;
 
-BasicObjectPipeline::BasicObjectPipeline(
+BasicRenderer::BasicRenderer(
   SDL_GPUTextureFormat targetFormat, SDL_GPUDevice *gpu,
   GPUPrimitiveType type, SDL_GPUCullMode cullMode, Uint32 sw, Uint32 sh
 ) {
@@ -73,7 +73,7 @@ BasicObjectPipeline::BasicObjectPipeline(
   SDL_ReleaseGPUShader(device, fragShader);
 }
 
-void BasicObjectPipeline::resizeScreen(Uint32 w, Uint32 h) {
+void BasicRenderer::resizeScreen(Uint32 w, Uint32 h) {
   SDL_ReleaseGPUTexture(device, depthTx);
   depthTx = SDL_CreateGPUTexture(device, new SDL_GPUTextureCreateInfo {
     .type = SDL_GPU_TEXTURETYPE_2D,
@@ -88,7 +88,7 @@ void BasicObjectPipeline::resizeScreen(Uint32 w, Uint32 h) {
   cam.viewHeight = (float)h;
 }
 
-int BasicObjectPipeline::addObject(std::vector<RenderVertex> const &vertices) {
+int BasicRenderer::addObject(std::vector<RenderVertex> const &vertices) {
 	// create vertex buffer
   Uint32 vSize = sizeof(RenderVertex) * vertices.size();
   SDL_GPUBuffer *vBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
@@ -169,7 +169,7 @@ int BasicObjectPipeline::addObject(std::vector<RenderVertex> const &vertices) {
   return id;
 }
 
-int BasicObjectPipeline::addObject(std::vector<RenderVertex> const &vertices, std::vector<Uint16> const &indices) {
+int BasicRenderer::addObject(std::vector<RenderVertex> const &vertices, std::vector<Uint16> const &indices) {
   // create vertex buffer
   Uint32 vSize = sizeof(RenderVertex) * vertices.size();
   SDL_GPUBuffer *vBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
@@ -292,14 +292,14 @@ int BasicObjectPipeline::addObject(std::vector<RenderVertex> const &vertices, st
   return id;
 }
 
-int BasicObjectPipeline::addObject(Primitive const &shape) {
+int BasicRenderer::addObject(Primitive const &shape) {
   if (shape.useIndices) {
     return addObject(shape.vertices, shape.indices);
   }
   return addObject(shape.vertices);
 }
 
-void BasicObjectPipeline::addTextureToObject(int id, SDL_GPUTexture *texture) {
+void BasicRenderer::addTextureToObject(int id, SDL_GPUTexture *texture) {
   if (id >= renderObjects.size()) {
     SDL_Log("ERR: Tried to access render object that doesn't exist %d", id);
     return;
@@ -308,11 +308,11 @@ void BasicObjectPipeline::addTextureToObject(int id, SDL_GPUTexture *texture) {
   renderObjects.at(id).texture = texture;
 }
 
-RenderObject& BasicObjectPipeline::getMutableObject(int id) {
+RenderObject& BasicRenderer::getMutableObject(int id) {
   return renderObjects.at(id);
 }
 
-void BasicObjectPipeline::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target) {
+void BasicRenderer::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target) {
   SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
 		.texture = target,
 		.clear_color = SDL_FColor{ 0.02f, 0.02f, 0.08f, 1.0f },
@@ -365,7 +365,7 @@ void BasicObjectPipeline::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* t
   SDL_EndGPURenderPass(pass);
 }
 
-void BasicObjectPipeline::clearAllObjectAssets() {
+void BasicRenderer::clearAllObjectAssets() {
   for (int i=0; i<renderObjects.size(); i++) {
     if (renderObjects[i].vertexBuffer != NULL) SDL_ReleaseGPUBuffer(device, renderObjects[i].vertexBuffer);
     if (renderObjects[i].indexBuffer != NULL) SDL_ReleaseGPUBuffer(device, renderObjects[i].indexBuffer);
@@ -375,7 +375,7 @@ void BasicObjectPipeline::clearAllObjectAssets() {
   renderObjects.clear();
 }
 
-void BasicObjectPipeline::destroy() {
+void BasicRenderer::destroy() {
   clearAllObjectAssets();
   SDL_ReleaseGPUTexture(device, depthTx);
   SDL_ReleaseGPUGraphicsPipeline(device, pipeline);
