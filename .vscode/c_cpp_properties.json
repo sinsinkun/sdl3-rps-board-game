@@ -4,9 +4,8 @@
             "name": "GCC MinGW / UCRT64",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/msys64/ucrt64/include",
-                "C:/msys64/ucrt64/include/c++/**",
-                "C:/msys64/ucrt64/include/SDL3"
+                "C:/msys64/ucrt64/include/**",
+                "C:/msys64/ucrt64/include/c++/**"
             ],
             "defines": [
                 "_DEBUG",

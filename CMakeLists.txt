@@ -45,9 +45,11 @@ endif()
 # set(SDL3_DIR "path/to/SDL3/lib/cmake/SDL3")
 
 find_package(SDL3 REQUIRED CONFIG)
+find_package(SDL3_ttf REQUIRED CONFIG)
 
 # Link against the shared SDL3 library target
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3-shared)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_ttf::SDL3_ttf-shared)
 
 # ------------------------------------------------------------------------------
 # Copy SDL3.dll to the Output Directory (Windows)
@@ -57,6 +59,7 @@ if(WIN32)
         TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:SDL3::SDL3-shared>
+            $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared>
             $<TARGET_FILE_DIR:${PROJECT_NAME}>
         VERBATIM
     )
