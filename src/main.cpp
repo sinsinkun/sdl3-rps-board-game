@@ -145,7 +145,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   // clear swapchain
   SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
 		.texture = swapchain,
-		.clear_color = SDL_FColor{ 0.02f, 0.02f, 0.08f, 1.0f },
+		.clear_color = SDL_FColor{ 0.0f, 0.0f, 0.0f, 1.0f },
 		.load_op = SDL_GPU_LOADOP_CLEAR,
 		.store_op = SDL_GPU_STOREOP_STORE,
 	}, 1, NULL);
