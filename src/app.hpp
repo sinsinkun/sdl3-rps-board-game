@@ -19,6 +19,7 @@ namespace App {
     glm::vec2 mousePosScreenSpace = glm::vec2(0.0f);
     const bool *kbStates = NULL;
   };
+
   class Scene {
   public:
     virtual SDL_AppResult update(SystemUpdates const &sys) {
@@ -35,6 +36,7 @@ namespace App {
   protected:
     Scene() {};
   };
+
   class BoardScene: public Scene {
   public:
     BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat);
@@ -45,6 +47,7 @@ namespace App {
     Gfx::BasicRenderer *renderer;
     glm::vec2 screenSize = glm::vec2(0.0f);
   };
+
   struct AppState {
     SDL_Window *window = NULL;
     SDL_GPUDevice *gpu = NULL;

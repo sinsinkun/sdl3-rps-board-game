@@ -39,9 +39,6 @@ namespace Gfx {
     float viewHeight = 0.0f;
     float fovY = 1.05f;
   };
-  glm::mat4x4 modelMatrix(RenderObject const &obj);
-  glm::mat4x4 viewMatrix(RenderCamera const &cam);
-  glm::mat4x4 projMatrix(RenderCamera const &cam);
   SDL_GPUShader* loadShader(
     SDL_GPUDevice *device, const char* filename, Uint32 samplerCount,
     Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount
@@ -51,6 +48,7 @@ namespace Gfx {
     std::vector<RenderVertex> *verts, std::vector<Uint16> *indices
   );
   SDL_GPUVertexInputState createVertexInputState();
+
   // color
   SDL_FColor rgba(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
   SDL_FColor rgb(Uint8 r, Uint8 g, Uint8 b);
@@ -69,9 +67,14 @@ namespace Gfx {
   static SDL_FColor MAGENTA{1.0f, 0.0f, 1.0f, 1.0f};
   static SDL_FColor ORANGE{1.0f, 0.5f, 0.0f, 1.0f};
   static SDL_FColor PURPLE{0.5f, 0.0f, 1.0f, 1.0f};
+
   // math
+  glm::mat4x4 modelMatrix(RenderObject const &obj);
+  glm::mat4x4 viewMatrix(RenderCamera const &cam);
+  glm::mat4x4 projMatrix(RenderCamera const &cam);
   float degToRad(float d);
   float radToDeg(float r);
+
   // primitives
   struct Primitive {
     std::vector<RenderVertex> vertices;

@@ -203,7 +203,7 @@ void Gfx::copyVertexDataIntoBuffer(
 
 #pragma endregion Pipeline helpers
 
-#pragma region Color utils
+#pragma region Color
 
 SDL_FColor Gfx::rgba(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 	return SDL_FColor{ r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f };
@@ -249,7 +249,9 @@ SDL_FColor Gfx::modAlpha(SDL_FColor clr, float a) {
 	return SDL_FColor{ clr.r, clr.g, clr.b, a };
 }
 
-#pragma endregion Color utils
+#pragma endregion Color
+
+#pragma region Math
 
 glm::mat4x4 Gfx::modelMatrix(RenderObject const &obj) {
   glm::mat4x4 id = glm::mat4x4(1.0f);
@@ -280,6 +282,8 @@ float Gfx::degToRad(float d) {
 float Gfx::radToDeg(float r) {
 	return r * 180.0f / SDL_PI_F;
 }
+
+#pragma endregion Math
 
 #pragma region Primitives
 
