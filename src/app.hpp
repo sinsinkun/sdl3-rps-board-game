@@ -37,6 +37,20 @@ namespace App {
     Scene() {};
   };
 
+  enum BoardTileState {
+    DEFAULT,
+    ACCESSIBLE,
+    ROCK,
+    PAPER,
+    SCISSORS,
+  };
+
+  struct BoardTile {
+    int objectId = -1;
+    glm::vec3 position = glm::vec3(0.0f);
+    BoardTileState state = BoardTileState::DEFAULT;
+  };
+
   class BoardScene: public Scene {
   public:
     BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat);
@@ -46,6 +60,8 @@ namespace App {
     // render pipeline
     Gfx::BasicRenderer *renderer;
     glm::vec2 screenSize = glm::vec2(0.0f);
+  private:
+    BoardTile boardTiles[5][5];
   };
 
   struct AppState {

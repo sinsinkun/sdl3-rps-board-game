@@ -2,8 +2,8 @@
 
 using namespace App;
 
-void addBoardToRendererObjects(Gfx::BasicRenderer *renderer) {
-  std::vector<glm::vec3> positions = {
+void addBoardTiles(BoardTile boardTiles[5][5], Gfx::BasicRenderer *renderer) {
+  glm::vec3 positions[5][5] = {
     glm::vec3 {-200.0, 200.0, 0.0},
     glm::vec3 {-100.0, 200.0, 0.0},
     glm::vec3 {   0.0, 200.0, 0.0},
@@ -36,11 +36,15 @@ void addBoardToRendererObjects(Gfx::BasicRenderer *renderer) {
   };
   Gfx::Primitive tile = Gfx::rect2d(90.0f, 90.0f, 0.0f);
 
-  for (int i=0; i<positions.size(); i++) {
-    int objId = renderer->addObject(tile);
-    Gfx::RenderObject& obj = renderer->getMutableObject(objId);
-    obj.pos = positions.at(i);
-    obj.albedo = Gfx::rgb(14, 71, 124);
+  for (int i=0; i<5; i++) {
+    for (int j=0; j<5; j++) {
+      int objId = renderer->addObject(tile);
+      Gfx::RenderObject& obj = renderer->getMutableObject(objId);
+      obj.pos = positions[i][j];
+      obj.albedo = Gfx::rgb(14, 71, 124);
+      boardTiles[i][j].objectId = objId;
+      boardTiles[i][j].position = positions[i][j];
+    }
   }
 }
 
@@ -51,7 +55,7 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat) : 
     .perspective = false
   };
 
-  addBoardToRendererObjects(renderer);
+  addBoardTiles(boardTiles, renderer);
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
