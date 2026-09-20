@@ -11,6 +11,8 @@ List of expected assets:
 - SPIRV
   - obj-basic.frag.spv
   - obj.vert.spv
+- icon.png
+- font.ttf
 
 ## Developer Environment Setup
 
