@@ -93,34 +93,31 @@ SDL_GPUVertexInputState Gfx::createVertexInputState() {
 	};
 	state.num_vertex_buffers = 1;
 	
+	// vertex pos buffer (vec3)
 	SDL_GPUVertexAttribute vAttr0 = {
 		.location = 0,
 		.buffer_slot = 0,
 		.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
 		.offset = 0,
 	};
+	// vertex uv buffer (vec2)
 	SDL_GPUVertexAttribute vAttr1 = {
 		.location = 1,
 		.buffer_slot = 0,
 		.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
 		.offset = sizeof(float) * 3,
 	};
+	// vertex normal buffer (vec3)
 	SDL_GPUVertexAttribute vAttr2 = {
 		.location = 2,
 		.buffer_slot = 0,
 		.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
 		.offset = sizeof(float) * 5,
 	};
-	SDL_GPUVertexAttribute vAttr3 = {
-		.location = 3,
-		.buffer_slot = 0,
-		.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
-		.offset = sizeof(float) * 8,
-	};
 	state.vertex_attributes = new SDL_GPUVertexAttribute[4] {
-		vAttr0, vAttr1, vAttr2, vAttr3
+		vAttr0, vAttr1, vAttr2
 	};
-	state.num_vertex_attributes = 4;
+	state.num_vertex_attributes = 3;
 
 	return state;
 }
