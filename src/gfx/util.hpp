@@ -1,7 +1,9 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 
@@ -26,7 +28,8 @@ namespace Gfx {
     glm::vec3 scale = glm::vec3(1.0f);
     glm::vec3 rotAxis = glm::vec3(0.0f, 0.0f, 1.0f);
     float rotAngleRad = 0.0f;
-    SDL_FColor albedo {0.5f, 0.5f, 0.5f, 1.0f};
+    SDL_FColor albedo = SDL_FColor{0.5f, 0.5f, 0.5f, 1.0f};
+    glm::vec2 textureSize = glm::vec2(0.0f);
   };
   struct RenderCamera {
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 500.0f);
@@ -89,4 +92,19 @@ namespace Gfx {
   Primitive tube(float outerRadius, float innerRadius, float h, Uint16 sides);
   Primitive sphere(float r, Uint16 sides, Uint16 slices);
   Primitive hemisphere(float r, Uint16 sides, Uint16 slices);
+
+  // text rendering
+  struct RenderText {
+    int parentObjectId = -1;
+    bool visible = true;
+    SDL_GPUBuffer *vertexBuffer = NULL;
+    SDL_GPUBuffer *indexBuffer = NULL;
+    int vertexCount = 0;
+    int indexCount = 0;
+    std::string text;
+    glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
+    SDL_FColor color = SDL_FColor{1.0f, 1.0f, 1.0f, 1.0f};
+    TTF_Text *ttfText = NULL;
+    TTF_GPUAtlasDrawSequence *sequence = NULL;
+  };
 }
