@@ -105,6 +105,5 @@ namespace Gfx {
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
     SDL_FColor color = SDL_FColor{1.0f, 1.0f, 1.0f, 1.0f};
     TTF_Text *ttfText = NULL;
-    TTF_GPUAtlasDrawSequence *sequence = NULL;
   };
 }

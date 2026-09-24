@@ -78,11 +78,10 @@ BasicRenderer::BasicRenderer(
 }
 
 void BasicRenderer::enableTextGeneration(
-  SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine, TTF_Font *font
+  SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine, std::string fontPath, float fontSize
 ) {
   textEnabled = true;
   textEngine = textEngine;
-  textFont = font;
 
   // TODO: replace with text specific shaders
   SDL_GPUShader *vertShader = Gfx::loadShader(device, "obj.vert", 0, 1, 0, 0);
@@ -114,10 +113,14 @@ void BasicRenderer::enableTextGeneration(
   });
 
   // load font
-  textFont = TTF_OpenFont("assets/font.ttf", 18);
+  textFont = TTF_OpenFont(fontPath.c_str(), fontSize);
   if (textFont == NULL) {
     SDL_Log("Failed to load font: %s", SDL_GetError());
+  } else {
+    SDL_Log("Opened font \"%s\"", fontPath.c_str());
   }
+
+  SDL_Log("Enabled text generation in BasicRenderer");
 
   // release shaders
 	SDL_ReleaseGPUShader(device, vertShader);
@@ -368,6 +371,8 @@ void addGlyphToVertices(
 	glm::vec3 origin
 ) {
   for (int i=0; i < sequence->num_vertices; i++) {
+    SDL_Log("adding glyph vertex? %s", sequence->xy[i]);
+    SDL_Log("adding glyph vertex? %s", sequence->uv[i]);
 		RenderVertex vert;
 		const SDL_FPoint pos = sequence->xy[i];
 		const SDL_FPoint uv = sequence->uv[i];
@@ -392,34 +397,58 @@ void BasicRenderer::addTextToObject(
   Uint32 textureWidth,
   Uint32 textureHeight
 ) {
+  TTF_Text *ttfText = TTF_CreateText(textEngine, textFont, text.c_str(), 0);
+  if (ttfText == NULL) {
+    SDL_Log("Something went wrong while creating text: %s", SDL_GetError());
+    return;
+  } else {
+    SDL_Log("Created TTF_Text \"%s\"", ttfText->text);
+  }
   RenderText renderText = RenderText {
     .parentObjectId = id,
     .text = text,
     .pos = pos,
     .color = color,
-    .ttfText = TTF_CreateText(textEngine, textFont, text.c_str(), text.length()),
+    .ttfText = ttfText
   };
+  
   // update texture size
   SDL_GPUTexture *textTexture = SDL_CreateGPUTexture(device, new SDL_GPUTextureCreateInfo {
     .type = SDL_GPU_TEXTURETYPE_2D,
     .format = textureFormat,
-    .usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
+    .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
     .width = textureWidth,
     .height = textureHeight,
+    .layer_count_or_depth = 1,
+    .num_levels = 1,
   });
   addTextureToObject(id, textTexture, glm::vec2((float)textureWidth, (float)textureHeight));
+  SDL_Log("Created texture for text");
 
   // generate vertex/index buffers
-  renderText.sequence = TTF_GetGPUTextDrawData(renderText.ttfText);
+  TTF_GPUAtlasDrawSequence *sequence = TTF_GetGPUTextDrawData(ttfText);
+  if (sequence == NULL) {
+    SDL_Log("Something went wrong while acquiring the text sequence: %s", SDL_GetError());
+    return;
+  }
   std::vector<RenderVertex> vertices;
   std::vector<Uint16> indices;
-  SDL_GPUTexture *atlas = renderText.sequence->atlas_texture;
-  for (TTF_GPUAtlasDrawSequence *seq = renderText.sequence; seq != NULL; seq = seq->next) {
+  for (TTF_GPUAtlasDrawSequence *seq = sequence; seq != NULL; seq = seq->next) {
     addGlyphToVertices(seq, &vertices, &indices, renderText.color, renderText.pos);
   }
+  renderText.vertexBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
+    .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+    .size = (Uint32)(sizeof(RenderVertex) * vertices.size()),
+  });
+  renderText.indexBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
+    .usage = SDL_GPU_BUFFERUSAGE_INDEX,
+    .size = (Uint32)(sizeof(Uint16) * indices.size()),
+  });
+  SDL_Log("Added glyphs to vertices");
   copyVertexDataIntoBuffer(device, renderText.vertexBuffer, renderText.indexBuffer, &vertices, &indices);
   renderText.vertexCount = vertices.size();
   renderText.indexCount = indices.size();
+  SDL_Log("Copied data into buffers");
 
   // add to list
   renderTexts.push_back(renderText);
@@ -454,7 +483,8 @@ void BasicRenderer::renderTextsToObjTextures(SDL_GPUCommandBuffer *cmdBuf) {
     }, 1, NULL);
 
     // setup pipeline
-    SDL_GPUTexture *atlas = renderText.sequence->atlas_texture;
+    TTF_GPUAtlasDrawSequence *sequence = TTF_GetGPUTextDrawData(renderText.ttfText);
+    SDL_GPUTexture *atlas = sequence->atlas_texture;
     SDL_BindGPUGraphicsPipeline(pass, textPipeline);
     SDL_BindGPUFragmentSamplers(pass, 0, new SDL_GPUTextureSamplerBinding {
       .texture = atlas,
@@ -473,7 +503,7 @@ void BasicRenderer::renderTextsToObjTextures(SDL_GPUCommandBuffer *cmdBuf) {
     // dynamically offset buffers for each glyph
     int index_offset = 0, vertex_offset = 0;
     SDL_PushGPUFragmentUniformData(cmdBuf, 0, &renderText.color, sizeof(SDL_FColor));
-    for (TTF_GPUAtlasDrawSequence *seq = renderText.sequence; seq != NULL; seq = seq->next) {
+    for (TTF_GPUAtlasDrawSequence *seq = sequence; seq != NULL; seq = seq->next) {
       SDL_DrawGPUIndexedPrimitives(pass, seq->num_indices, 1, index_offset, vertex_offset, 0);
       index_offset += seq->num_indices;
       vertex_offset += seq->num_vertices;

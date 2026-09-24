@@ -18,7 +18,12 @@ namespace Gfx {
       Uint32 screenWidth,
       Uint32 screenHeight
     );
-    void enableTextGeneration(SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine, TTF_Font *font);
+    void enableTextGeneration(
+      SDL_GPUTextureFormat targetFormat,
+      TTF_TextEngine *textEngine,
+      std::string fontPath,
+      float fontSize
+    );
     void resizeScreen(Uint32 w, Uint32 h);
     int addObject(std::vector<Gfx::RenderVertex> const &vertices);
     int addObject(std::vector<Gfx::RenderVertex> const &vertices, std::vector<Uint16> const &indices);
