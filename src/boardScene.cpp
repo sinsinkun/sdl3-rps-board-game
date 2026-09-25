@@ -48,14 +48,16 @@ void addBoardTiles(BoardTile boardTiles[5][5], Gfx::BasicRenderer *renderer) {
   }
 }
 
-BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat) : Scene() {
+BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine) : Scene() {
   // initialize gpu pipeline
   renderer = new Gfx::BasicRenderer(targetFormat, gpu, Gfx::PT_Triangle, SDL_GPU_CULLMODE_BACK, 800, 600);
   renderer->cam = Gfx::RenderCamera {
     .perspective = false
   };
+  renderer->enableTextGeneration(targetFormat, textEngine, "assets/font.ttf", 18);
 
   addBoardTiles(boardTiles, renderer);
+  renderer->addTextToObject(1, "Hello World", glm::vec3(10.0, 10.0, 0.0), Gfx::RED, targetFormat, 200, 200);
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {

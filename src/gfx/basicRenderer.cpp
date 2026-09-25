@@ -78,10 +78,13 @@ BasicRenderer::BasicRenderer(
 }
 
 void BasicRenderer::enableTextGeneration(
-  SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine, std::string fontPath, float fontSize
+  SDL_GPUTextureFormat targetFormat,
+  TTF_TextEngine *textEngineInput,
+  std::string fontPath,
+  float fontSize
 ) {
   textEnabled = true;
-  textEngine = textEngine;
+  textEngine = textEngineInput;
 
   // TODO: replace with text specific shaders
   SDL_GPUShader *vertShader = Gfx::loadShader(device, "obj.vert", 0, 1, 0, 0);
@@ -371,8 +374,6 @@ void addGlyphToVertices(
 	glm::vec3 origin
 ) {
   for (int i=0; i < sequence->num_vertices; i++) {
-    SDL_Log("adding glyph vertex? %s", sequence->xy[i]);
-    SDL_Log("adding glyph vertex? %s", sequence->uv[i]);
 		RenderVertex vert;
 		const SDL_FPoint pos = sequence->xy[i];
 		const SDL_FPoint uv = sequence->uv[i];
@@ -397,6 +398,10 @@ void BasicRenderer::addTextToObject(
   Uint32 textureWidth,
   Uint32 textureHeight
 ) {
+  if (textEngine == NULL || textFont == NULL) {
+    SDL_Log("Missing requirement to create ttfText (%p, %p)", textEngine, textFont);
+    return;
+  }
   TTF_Text *ttfText = TTF_CreateText(textEngine, textFont, text.c_str(), 0);
   if (ttfText == NULL) {
     SDL_Log("Something went wrong while creating text: %s", SDL_GetError());
@@ -426,7 +431,7 @@ void BasicRenderer::addTextToObject(
   SDL_Log("Created texture for text");
 
   // generate vertex/index buffers
-  TTF_GPUAtlasDrawSequence *sequence = TTF_GetGPUTextDrawData(ttfText);
+  TTF_GPUAtlasDrawSequence *sequence = TTF_GetGPUTextDrawData(ttfText); // -- BROKEN
   if (sequence == NULL) {
     SDL_Log("Something went wrong while acquiring the text sequence: %s", SDL_GetError());
     return;

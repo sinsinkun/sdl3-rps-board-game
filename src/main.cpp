@@ -6,13 +6,8 @@
 
 using namespace App;
 
-// initialization of app
-SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
-  SDL_SetAppMetadata("RPS Board Game", "0.1", "com.example.rps-board");
-  *appstate = new AppState;
-  AppState& state = *static_cast<AppState*>(*appstate);
-  state.sys.kbStates = SDL_GetKeyboardState(NULL);
-
+// helper to wrap default SDL3 system initialization
+SDL_AppResult initSDLSystems(AppState& state) {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     SDL_Log("SDL_Init(SDL_INIT_VIDEO) failed: %s", SDL_GetError());
     return SDL_APP_FAILURE;
@@ -63,9 +58,23 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   }
   SDL_Log("Started text engine");
 
+  SDL_Log("-- Successfully initialized SDL3 systems --");
+  return SDL_APP_CONTINUE;
+}
+
+// initialization of app
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+  SDL_SetAppMetadata("RPS Board Game", "0.1", "com.example.rps-board");
+  *appstate = new AppState;
+  AppState& state = *static_cast<AppState*>(*appstate);
+  state.sys.kbStates = SDL_GetKeyboardState(NULL);
+  if (initSDLSystems(state) != SDL_APP_CONTINUE) {
+    return SDL_APP_FAILURE;
+  }
+
   // load scene into memory
   SDL_GPUTextureFormat scFormat = SDL_GetGPUSwapchainTextureFormat(state.gpu, state.window);
-  BoardScene *scene1 = new BoardScene(state.gpu, scFormat);
+  BoardScene *scene1 = new BoardScene(state.gpu, scFormat, state.textEngine);
   state.scenes.push_back(scene1);
 
   return SDL_APP_CONTINUE;
@@ -76,7 +85,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   AppState& state = *static_cast<AppState*>(appstate);
   switch (event->type) {
     // triggers on last window close and other things. End the program.
-    case SDL_EVENT_QUIT:  
+    case SDL_EVENT_QUIT:
       return SDL_APP_SUCCESS;
     case SDL_EVENT_WINDOW_RESIZED:
       state.sys.winSize.x = event->window.data1;
