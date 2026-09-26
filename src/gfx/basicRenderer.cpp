@@ -490,7 +490,7 @@ SDL_GPUTexture* BasicRenderer::createTextTexture(
   SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
     .texture = textTexture,
     .clear_color = backgroundColor,
-    .load_op = SDL_GPU_LOADOP_LOAD,
+    .load_op = SDL_GPU_LOADOP_CLEAR,
     .store_op = SDL_GPU_STOREOP_STORE,
   }, 1, NULL);
 

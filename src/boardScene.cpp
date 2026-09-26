@@ -58,7 +58,7 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
 
   addBoardTiles(boardTiles, renderer);
   SDL_GPUTexture *txt = renderer->createTextTexture(
-    "Rock", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::RED,
+    "Rock", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::TRANSPARENT,
     targetFormat, 100, 100
   );
   renderer->addTextureToObject(2, txt, glm::vec2(100.0, 100.0));
