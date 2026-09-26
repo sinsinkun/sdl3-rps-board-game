@@ -79,7 +79,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   return SDL_APP_CONTINUE;
 }
 
-// handle events
+// handle events (note: these happen asynchronously from the iterate loop)
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   AppState& state = *static_cast<AppState*>(appstate);
   switch (event->type) {
