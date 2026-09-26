@@ -67,7 +67,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   SDL_SetAppMetadata("RPS Board Game", "0.1", "com.example.rps-board");
   *appstate = new AppState;
   AppState& state = *static_cast<AppState*>(*appstate);
-  state.sys.kbStates = SDL_GetKeyboardState(NULL);
   if (initSDLSystems(state) != SDL_APP_CONTINUE) {
     return SDL_APP_FAILURE;
   }
@@ -90,6 +89,15 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDL_EVENT_WINDOW_RESIZED:
       state.sys.winSize.x = event->window.data1;
       state.sys.winSize.y = event->window.data2;
+      break;
+    case SDL_EVENT_KEY_DOWN:
+      if (state.sys.keysHeld.find(event->key.key) == state.sys.keysHeld.end()) {
+        state.sys.keysPressed.emplace(event->key.key);
+        state.sys.keysHeld.emplace(event->key.key);
+      }
+      break;
+    case SDL_EVENT_KEY_UP:
+      state.sys.keysHeld.erase(event->key.key);
       break;
     case SDL_EVENT_MOUSE_MOTION:
       state.sys.mousePosScreenSpace = glm::vec2(event->motion.x, event->motion.y);
@@ -134,6 +142,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     }
     SDL_AppResult res = state.scenes.at(state.currentScene)->update(state.sys);
     if (res != SDL_APP_CONTINUE) return res;
+  }
+
+  // events are asynchronous, so we have to clean up keysPressed per frame
+  for (SDL_Keycode key : state.sys.keysPressed) {
+    if (state.sys.keysHeld.find(key) != state.sys.keysHeld.end()) {
+      state.sys.keysPressed.erase(key);
+    }
   }
 
   // ---------------------------------------------

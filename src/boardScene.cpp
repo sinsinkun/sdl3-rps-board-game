@@ -61,7 +61,7 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
     "Rock", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::TRANSPARENT,
     targetFormat, 100, 100
   );
-  renderer->addTextureToObject(2, txt, glm::vec2(100.0, 100.0));
+  renderer->addTextureToObject(boardTiles[0][2].objectId, txt, glm::vec2(100.0, 100.0));
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
@@ -71,8 +71,8 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     screenSize = sys.winSize;
   }
   // handle inputs
-  if (sys.kbStates[SDL_SCANCODE_A]) {
-    renderer->swapTexturesOnObjects(2, 3);
+  if (sys.keysPressed.find(SDLK_A) != sys.keysPressed.end()) {
+    renderer->swapTexturesOnObjects(boardTiles[0][2].objectId, boardTiles[1][2].objectId);
   }
 
   return SDL_APP_CONTINUE;

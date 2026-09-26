@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <set>
+#include <iterator>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3_image/SDL_image.h>
@@ -18,7 +20,8 @@ namespace App {
     Uint64 timeSinceLastFps = 0;
     // inputs passthrough
     glm::vec2 mousePosScreenSpace = glm::vec2(0.0f);
-    const bool *kbStates = NULL;
+    std::set<SDL_Keycode> keysPressed;
+    std::set<SDL_Keycode> keysHeld;
   };
 
   class Scene {
