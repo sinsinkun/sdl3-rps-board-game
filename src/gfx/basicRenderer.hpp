@@ -30,6 +30,7 @@ namespace Gfx {
     int addObject(Gfx::Primitive const &shape);
     void addTextureToObject(int id, SDL_GPUTexture *texture, glm::vec2 textureSize);
     void clearTextureOnObject(int id);
+    void swapTexturesOnObjects(int id1, int id2);
     // remember to dispose of this texture after use
     // (attaching a texture to a RenderObject will automatically dispose)
     SDL_GPUTexture* createTextTexture(

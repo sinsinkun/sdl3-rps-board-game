@@ -395,6 +395,20 @@ void BasicRenderer::clearTextureOnObject(int id) {
   renderObjects.at(id).texture = texture;
 }
 
+void BasicRenderer::swapTexturesOnObjects(int id1, int id2) {
+  if (id1 < 0 || id1 >= renderObjects.size()) {
+    SDL_Log("ERR: Tried to access render object that doesn't exist %d", id1);
+    return;
+  }
+  if (id2 < 0 || id2 >= renderObjects.size()) {
+    SDL_Log("ERR: Tried to access render object that doesn't exist %d", id2);
+    return;
+  }
+  SDL_GPUTexture *swap = renderObjects.at(id1).texture;
+  renderObjects.at(id1).texture = renderObjects.at(id2).texture;
+  renderObjects.at(id2).texture = swap;
+}
+
 void addGlyphToVertices(
 	TTF_GPUAtlasDrawSequence *sequence,
 	std::vector<RenderVertex> *vertices,

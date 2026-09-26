@@ -111,8 +111,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   Uint64 newTime = SDL_GetTicksNS();
   Uint64 delta = newTime - state.sys.lifetime;
 
-  // forced frame cap (0.1 ms or 10,000 FPS)
-  if (delta < 100001) return SDL_APP_CONTINUE;
+  // forced frame cap
+  int maxDelta = 1000000000 / App::MAX_FPS;
+  if (delta < maxDelta) return SDL_APP_CONTINUE;
 
   // calculate FPS
   state.sys.lifetime = newTime;

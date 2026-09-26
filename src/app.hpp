@@ -9,6 +9,7 @@
 #include "gfx/basicRenderer.hpp"
 
 namespace App {
+  const int MAX_FPS = 1000;
   struct SystemUpdates {
     glm::vec2 winSize = glm::vec2(800.0f, 600.0f);
     // fps calculation variables

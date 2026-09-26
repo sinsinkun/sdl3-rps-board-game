@@ -70,7 +70,10 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     renderer->resizeScreen((Uint32)sys.winSize.x, (Uint32)sys.winSize.y);
     screenSize = sys.winSize;
   }
-  // todo: handle inputs
+  // handle inputs
+  if (sys.kbStates[SDL_SCANCODE_A]) {
+    renderer->swapTexturesOnObjects(2, 3);
+  }
 
   return SDL_APP_CONTINUE;
 }
