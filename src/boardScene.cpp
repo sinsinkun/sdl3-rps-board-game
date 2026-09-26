@@ -54,11 +54,14 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
   renderer->cam = Gfx::RenderCamera {
     .perspective = false
   };
-  renderer->enableTextGeneration(targetFormat, textEngine, "assets/font.ttf", 18);
+  renderer->enableTextGeneration(targetFormat, textEngine, "assets/font.ttf", 24);
 
   addBoardTiles(boardTiles, renderer);
-  renderer->addTextToObject(1, "Hello World", glm::vec3(5.0, 5.0, 0.0), Gfx::RED, targetFormat, 100, 100);
-  renderer->renderTextsToObjTextures();
+  SDL_GPUTexture *txt = renderer->createTextTexture(
+    "Rock", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::RED,
+    targetFormat, 100, 100
+  );
+  renderer->addTextureToObject(2, txt, glm::vec2(100.0, 100.0));
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {

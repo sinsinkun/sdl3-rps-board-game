@@ -123,6 +123,16 @@ void BasicRenderer::enableTextGeneration(
     SDL_Log("Opened font \"%s\"", fontPath.c_str());
   }
 
+  // initialize
+  textSampler = SDL_CreateGPUSampler(device, new SDL_GPUSamplerCreateInfo {
+    .min_filter = SDL_GPU_FILTER_LINEAR,
+    .mag_filter = SDL_GPU_FILTER_LINEAR,
+    .mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR,
+    .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+    .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+    .address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE
+  });
+
   SDL_Log("Enabled text generation in BasicRenderer");
 
   // release shaders
@@ -366,6 +376,25 @@ void BasicRenderer::addTextureToObject(int id, SDL_GPUTexture *texture, glm::vec
   renderObjects.at(id).textureSize = textureSize;
 }
 
+void BasicRenderer::clearTextureOnObject(int id) {
+  if (id < 0 || id >= renderObjects.size()) {
+    SDL_Log("ERR: Tried to access render object that doesn't exist %d", id);
+    return;
+  }
+  SDL_ReleaseGPUTexture(device, renderObjects.at(id).texture);
+  // create placeholder texture
+  SDL_GPUTexture *texture = SDL_CreateGPUTexture(device, new SDL_GPUTextureCreateInfo {
+    .type = SDL_GPU_TEXTURETYPE_2D,
+    .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+    .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
+    .width = 1,
+    .height = 1,
+    .layer_count_or_depth = 1,
+    .num_levels = 1,
+  });
+  renderObjects.at(id).texture = texture;
+}
+
 void addGlyphToVertices(
 	TTF_GPUAtlasDrawSequence *sequence,
 	std::vector<RenderVertex> *vertices,
@@ -389,35 +418,27 @@ void addGlyphToVertices(
 	}
 }
 
-void BasicRenderer::addTextToObject(
-  int id,
+SDL_GPUTexture* BasicRenderer::createTextTexture(
   std::string text,
   glm::vec3 pos,
-  SDL_FColor color,
-  SDL_GPUTextureFormat textureFormat, 
+  SDL_FColor textColor,
+  SDL_FColor backgroundColor,
+  SDL_GPUTextureFormat textureFormat,
   Uint32 textureWidth,
   Uint32 textureHeight
 ) {
+  // check for pre-requisite systems
   if (textEngine == NULL || textFont == NULL) {
     SDL_Log("Missing requirement to create ttfText (%p, %p)", textEngine, textFont);
-    return;
+    return NULL;
   }
   TTF_Text *ttfText = TTF_CreateText(textEngine, textFont, text.c_str(), 0);
   if (ttfText == NULL) {
     SDL_Log("Something went wrong while creating text: %s", SDL_GetError());
-    return;
-  } else {
-    SDL_Log("Created TTF_Text \"%s\"", ttfText->text);
+    return NULL;
   }
-  RenderText renderText = RenderText {
-    .parentObjectId = id,
-    .text = text,
-    .pos = pos,
-    .color = color,
-    .ttfText = ttfText
-  };
-  
-  // update texture size
+
+  // create texture
   SDL_GPUTexture *textTexture = SDL_CreateGPUTexture(device, new SDL_GPUTextureCreateInfo {
     .type = SDL_GPU_TEXTURETYPE_2D,
     .format = textureFormat,
@@ -427,99 +448,83 @@ void BasicRenderer::addTextToObject(
     .layer_count_or_depth = 1,
     .num_levels = 1,
   });
-  addTextureToObject(id, textTexture, glm::vec2((float)textureWidth, (float)textureHeight));
 
   // generate vertex/index buffers
   TTF_GPUAtlasDrawSequence *sequence = TTF_GetGPUTextDrawData(ttfText); // -- BROKEN
   if (sequence == NULL) {
     SDL_Log("Something went wrong while acquiring the text sequence: %s", SDL_GetError());
-    return;
+    return NULL;
   }
   std::vector<RenderVertex> vertices;
   std::vector<Uint16> indices;
   for (TTF_GPUAtlasDrawSequence *seq = sequence; seq != NULL; seq = seq->next) {
-    addGlyphToVertices(seq, &vertices, &indices, renderText.color, renderText.pos);
+    addGlyphToVertices(seq, &vertices, &indices, textColor, pos);
   }
-  renderText.vertexBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
+  SDL_GPUBuffer *vertexBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
     .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
     .size = (Uint32)(sizeof(RenderVertex) * vertices.size()),
   });
-  renderText.indexBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
+  SDL_GPUBuffer *indexBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
     .usage = SDL_GPU_BUFFERUSAGE_INDEX,
     .size = (Uint32)(sizeof(Uint16) * indices.size()),
   });
-  copyVertexDataIntoBuffer(device, renderText.vertexBuffer, renderText.indexBuffer, &vertices, &indices);
-  renderText.vertexCount = vertices.size();
-  renderText.indexCount = indices.size();
+  copyVertexDataIntoBuffer(device, vertexBuffer, indexBuffer, &vertices, &indices);
 
-  // add to list
-  renderTexts.push_back(renderText);
+  // render text onto texture
+  SDL_GPUCommandBuffer *cmdBuf = SDL_AcquireGPUCommandBuffer(device);
+  SDL_InsertGPUDebugLabel(cmdBuf, "Text Texture Render");
+  SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
+    .texture = textTexture,
+    .clear_color = backgroundColor,
+    .load_op = SDL_GPU_LOADOP_LOAD,
+    .store_op = SDL_GPU_STOREOP_STORE,
+  }, 1, NULL);
+
+  // setup pipeline
+  SDL_GPUTexture *atlas = sequence->atlas_texture;
+  SDL_BindGPUGraphicsPipeline(pass, textPipeline);
+  SDL_BindGPUFragmentSamplers(pass, 0, new SDL_GPUTextureSamplerBinding {
+    .texture = atlas,
+    .sampler = textSampler
+  }, 1);
+  SDL_BindGPUVertexBuffers(pass, 0, new SDL_GPUBufferBinding {
+    .buffer = vertexBuffer,
+    .offset = 0,
+  }, 1);
+  SDL_BindGPUIndexBuffer(pass, new SDL_GPUBufferBinding {
+    .buffer = indexBuffer,
+    .offset = 0,
+  }, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+
+  glm::vec2 targetSize = glm::vec2((float)textureWidth, (float)textureHeight);
+  SDL_PushGPUVertexUniformData(cmdBuf, 0, &targetSize, sizeof(glm::vec2));
+  // dynamically offset buffers for each glyph
+  int index_offset = 0, vertex_offset = 0;
+  SDL_PushGPUFragmentUniformData(cmdBuf, 0, &textColor, sizeof(SDL_FColor));
+  for (TTF_GPUAtlasDrawSequence *seq = sequence; seq != NULL; seq = seq->next) {
+    SDL_DrawGPUIndexedPrimitives(pass, seq->num_indices, 1, index_offset, vertex_offset, 0);
+    index_offset += seq->num_indices;
+    vertex_offset += seq->num_vertices;
+  }
+
+  SDL_EndGPURenderPass(pass);
+
+  if (!SDL_SubmitGPUCommandBuffer(cmdBuf)) {
+		SDL_Log("Failed to submit GPU command %s", SDL_GetError());
+		return NULL;
+	};
+
+  // free up resources
+  SDL_ReleaseGPUBuffer(device, vertexBuffer);
+  SDL_ReleaseGPUBuffer(device, indexBuffer);
+  TTF_DestroyText(ttfText);
+
+  SDL_Log("Created texture for text (0x%p)", textTexture);
+  return textTexture;
 }
 
 RenderObject& BasicRenderer::getMutableObject(int id) {
   return renderObjects.at(id);
-}
-
-void BasicRenderer::renderTextsToObjTextures() {
-  SDL_GPUCommandBuffer *cmdBuf = SDL_AcquireGPUCommandBuffer(device);
-  SDL_InsertGPUDebugLabel(cmdBuf, "Text Texture Render");
-  // each RenderText needs its own pass
-  for (RenderText renderText : renderTexts) {
-    // select target
-    SDL_GPUTexture *target = NULL;
-    if (renderText.parentObjectId < 0 || renderObjects.size() < renderText.parentObjectId) {
-      SDL_Log("Trying to access non-existant parentObjectId (%i) - Skipping text render", renderText.parentObjectId);
-      continue;
-    }
-    target = renderObjects.at(renderText.parentObjectId).texture;
-    SDL_GPUSampler *sampler = renderObjects.at(renderText.parentObjectId).sampler;
-    glm::vec2 targetSize = renderObjects.at(renderText.parentObjectId).textureSize;
-    if (target == NULL) {
-      SDL_Log("Texture target not found");
-      continue;
-    }
-    // build render pass
-    SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
-      .texture = target,
-      .clear_color = Gfx::TRANSPARENT,
-      .load_op = SDL_GPU_LOADOP_LOAD,
-      .store_op = SDL_GPU_STOREOP_STORE,
-    }, 1, NULL);
-
-    // setup pipeline
-    TTF_GPUAtlasDrawSequence *sequence = TTF_GetGPUTextDrawData(renderText.ttfText);
-    SDL_GPUTexture *atlas = sequence->atlas_texture;
-    SDL_BindGPUGraphicsPipeline(pass, textPipeline);
-    SDL_BindGPUFragmentSamplers(pass, 0, new SDL_GPUTextureSamplerBinding {
-      .texture = atlas,
-      .sampler = sampler
-    }, 1);
-    SDL_BindGPUVertexBuffers(pass, 0, new SDL_GPUBufferBinding {
-      .buffer = renderText.vertexBuffer,
-      .offset = 0,
-    }, 1);
-    SDL_BindGPUIndexBuffer(pass, new SDL_GPUBufferBinding {
-      .buffer = renderText.indexBuffer,
-      .offset = 0,
-    }, SDL_GPU_INDEXELEMENTSIZE_16BIT);
-  
-    SDL_PushGPUVertexUniformData(cmdBuf, 0, &targetSize, sizeof(glm::vec2));
-    // dynamically offset buffers for each glyph
-    int index_offset = 0, vertex_offset = 0;
-    SDL_PushGPUFragmentUniformData(cmdBuf, 0, &renderText.color, sizeof(SDL_FColor));
-    for (TTF_GPUAtlasDrawSequence *seq = sequence; seq != NULL; seq = seq->next) {
-      SDL_DrawGPUIndexedPrimitives(pass, seq->num_indices, 1, index_offset, vertex_offset, 0);
-      index_offset += seq->num_indices;
-      vertex_offset += seq->num_vertices;
-    }
-
-    SDL_EndGPURenderPass(pass);
-  }
-
-  if (!SDL_SubmitGPUCommandBuffer(cmdBuf)) {
-		SDL_Log("Failed to submit GPU command %s", SDL_GetError());
-		return;
-	};
 }
 
 void BasicRenderer::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target) {
@@ -585,22 +590,14 @@ void BasicRenderer::clearAllObjectAssets() {
   renderObjects.clear();
 }
 
-void BasicRenderer::clearAllTextAssets() {
-  for (int i=0; i<renderTexts.size(); i++) {
-    if (renderTexts[i].ttfText != NULL) TTF_DestroyText(renderTexts[i].ttfText);
-    if (renderTexts[i].vertexBuffer != NULL) SDL_ReleaseGPUBuffer(device, renderTexts[i].vertexBuffer);
-    if (renderTexts[i].indexBuffer != NULL) SDL_ReleaseGPUBuffer(device, renderTexts[i].indexBuffer);
-  }
-}
-
 void BasicRenderer::destroy() {
   clearAllObjectAssets();
   SDL_ReleaseGPUTexture(device, depthTx);
   SDL_ReleaseGPUGraphicsPipeline(device, pipeline);
 
   if (textEnabled) {
-    clearAllTextAssets();
     TTF_CloseFont(textFont);
+    SDL_ReleaseGPUSampler(device, textSampler);
     SDL_ReleaseGPUGraphicsPipeline(device, textPipeline);
   }
 }
