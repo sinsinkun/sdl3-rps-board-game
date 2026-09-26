@@ -93,17 +93,4 @@ namespace Gfx {
   Primitive sphere(float r, Uint16 sides, Uint16 slices);
   Primitive hemisphere(float r, Uint16 sides, Uint16 slices);
 
-  // text rendering
-  struct RenderText {
-    int parentObjectId = -1;
-    bool visible = true;
-    SDL_GPUBuffer *vertexBuffer = NULL;
-    SDL_GPUBuffer *indexBuffer = NULL;
-    int vertexCount = 0;
-    int indexCount = 0;
-    std::string text;
-    glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
-    SDL_FColor color = SDL_FColor{1.0f, 1.0f, 1.0f, 1.0f};
-    TTF_Text *ttfText = NULL;
-  };
 }
