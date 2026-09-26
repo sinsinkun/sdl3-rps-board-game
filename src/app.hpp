@@ -12,7 +12,8 @@
 
 namespace App {
   const int MAX_FPS = 1000;
-  struct SystemUpdates {
+  class SystemUpdates {
+  public:
     glm::vec2 winSize = glm::vec2(800.0f, 600.0f);
     // fps calculation variables
     Uint64 lifetime = 0;
@@ -22,6 +23,12 @@ namespace App {
     glm::vec2 mousePosScreenSpace = glm::vec2(0.0f);
     std::set<SDL_Keycode> keysPressed;
     std::set<SDL_Keycode> keysHeld;
+    bool isKeyPressed(SDL_Keycode key) const {
+      return keysPressed.find(key) != keysPressed.end();
+    }
+    bool isKeyHeld(SDL_Keycode key) const {
+      return keysHeld.find(key) != keysHeld.end();
+    }
   };
 
   class Scene {

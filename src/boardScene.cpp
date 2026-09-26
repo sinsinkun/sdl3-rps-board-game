@@ -71,7 +71,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     screenSize = sys.winSize;
   }
   // handle inputs
-  if (sys.keysPressed.find(SDLK_A) != sys.keysPressed.end()) {
+  if (sys.isKeyPressed(SDLK_A)) {
     renderer->swapTexturesOnObjects(boardTiles[0][2].objectId, boardTiles[1][2].objectId);
   }
 
