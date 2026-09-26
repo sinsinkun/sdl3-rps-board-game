@@ -86,9 +86,9 @@ void BasicRenderer::enableTextGeneration(
   textEnabled = true;
   textEngine = textEngineInput;
 
-  // TODO: replace with text specific shaders
-  SDL_GPUShader *vertShader = Gfx::loadShader(device, "obj.vert", 0, 1, 0, 0);
-  SDL_GPUShader *fragShader = Gfx::loadShader(device, "obj-basic.frag", 1, 1, 0, 0);
+  // load ttf shaders
+  SDL_GPUShader *vertShader = Gfx::loadShader(device, "ttf-rect.vert", 0, 1, 0, 0);
+  SDL_GPUShader *fragShader = Gfx::loadShader(device, "ttf-rect.frag", 1, 1, 0, 0);
 
   // instantiate text pipeline
   textPipeline = SDL_CreateGPUGraphicsPipeline(device, new SDL_GPUGraphicsPipelineCreateInfo {
@@ -421,14 +421,13 @@ void BasicRenderer::addTextToObject(
   SDL_GPUTexture *textTexture = SDL_CreateGPUTexture(device, new SDL_GPUTextureCreateInfo {
     .type = SDL_GPU_TEXTURETYPE_2D,
     .format = textureFormat,
-    .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
+    .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
     .width = textureWidth,
     .height = textureHeight,
     .layer_count_or_depth = 1,
     .num_levels = 1,
   });
   addTextureToObject(id, textTexture, glm::vec2((float)textureWidth, (float)textureHeight));
-  SDL_Log("Created texture for text");
 
   // generate vertex/index buffers
   TTF_GPUAtlasDrawSequence *sequence = TTF_GetGPUTextDrawData(ttfText); // -- BROKEN
@@ -449,11 +448,9 @@ void BasicRenderer::addTextToObject(
     .usage = SDL_GPU_BUFFERUSAGE_INDEX,
     .size = (Uint32)(sizeof(Uint16) * indices.size()),
   });
-  SDL_Log("Added glyphs to vertices");
   copyVertexDataIntoBuffer(device, renderText.vertexBuffer, renderText.indexBuffer, &vertices, &indices);
   renderText.vertexCount = vertices.size();
   renderText.indexCount = indices.size();
-  SDL_Log("Copied data into buffers");
 
   // add to list
   renderTexts.push_back(renderText);
@@ -463,7 +460,9 @@ RenderObject& BasicRenderer::getMutableObject(int id) {
   return renderObjects.at(id);
 }
 
-void BasicRenderer::renderTextsToObjTextures(SDL_GPUCommandBuffer *cmdBuf) {
+void BasicRenderer::renderTextsToObjTextures() {
+  SDL_GPUCommandBuffer *cmdBuf = SDL_AcquireGPUCommandBuffer(device);
+  SDL_InsertGPUDebugLabel(cmdBuf, "Text Texture Render");
   // each RenderText needs its own pass
   for (RenderText renderText : renderTexts) {
     // select target
@@ -516,6 +515,11 @@ void BasicRenderer::renderTextsToObjTextures(SDL_GPUCommandBuffer *cmdBuf) {
 
     SDL_EndGPURenderPass(pass);
   }
+
+  if (!SDL_SubmitGPUCommandBuffer(cmdBuf)) {
+		SDL_Log("Failed to submit GPU command %s", SDL_GetError());
+		return;
+	};
 }
 
 void BasicRenderer::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target) {

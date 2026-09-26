@@ -57,7 +57,8 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
   renderer->enableTextGeneration(targetFormat, textEngine, "assets/font.ttf", 18);
 
   addBoardTiles(boardTiles, renderer);
-  renderer->addTextToObject(1, "Hello World", glm::vec3(10.0, 10.0, 0.0), Gfx::RED, targetFormat, 200, 200);
+  renderer->addTextToObject(1, "Hello World", glm::vec3(5.0, 5.0, 0.0), Gfx::RED, targetFormat, 100, 100);
+  renderer->renderTextsToObjTextures();
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
@@ -72,7 +73,6 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
 }
 
 SDL_AppResult BoardScene::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screen) {
-  // todo: handle render update logic
   // render gpu pipeline
   renderer->render(cmdBuf, screen);
 

@@ -41,7 +41,7 @@ namespace Gfx {
     );
     Gfx::RenderObject& getMutableObject(int id);
     // this only needs to run when text is updated, not on every render cycle
-    void renderTextsToObjTextures(SDL_GPUCommandBuffer *cmdBuf);
+    void renderTextsToObjTextures();
     void render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target);
     void clearAllObjectAssets();
     void clearAllTextAssets();
