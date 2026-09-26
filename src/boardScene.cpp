@@ -74,6 +74,9 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   if (sys.isKeyPressed(SDLK_A)) {
     renderer->swapTexturesOnObjects(boardTiles[0][2].objectId, boardTiles[1][2].objectId);
   }
+  if (sys.mouseClickState == MouseClickState::DOWN) {
+    SDL_Log("Mouse position: %f, %f", sys.mousePosScreenSpace.x, sys.mousePosScreenSpace.y);
+  }
 
   return SDL_APP_CONTINUE;
 }

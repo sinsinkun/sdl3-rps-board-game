@@ -102,6 +102,12 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDL_EVENT_MOUSE_MOTION:
       state.sys.mousePosScreenSpace = glm::vec2(event->motion.x, event->motion.y);
       break;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+      state.sys.mouseClickState = MouseClickState::DOWN;
+      break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+      state.sys.mouseClickState = MouseClickState::UP;
+      break;
     default:
       break;
   }
@@ -149,6 +155,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     if (state.sys.keysHeld.find(key) != state.sys.keysHeld.end()) {
       state.sys.keysPressed.erase(key);
     }
+  }
+  if (state.sys.mouseClickState == MouseClickState::UP) {
+    state.sys.mouseClickState = MouseClickState::NONE;
   }
 
   // ---------------------------------------------

@@ -11,7 +11,8 @@
 #include "gfx/basicRenderer.hpp"
 
 namespace App {
-  const int MAX_FPS = 1000;
+  const int MAX_FPS = 30;
+  enum MouseClickState { NONE, DOWN, UP };
   class SystemUpdates {
   public:
     glm::vec2 winSize = glm::vec2(800.0f, 600.0f);
@@ -21,6 +22,7 @@ namespace App {
     Uint64 timeSinceLastFps = 0;
     // inputs passthrough
     glm::vec2 mousePosScreenSpace = glm::vec2(0.0f);
+    MouseClickState mouseClickState = MouseClickState::NONE;
     std::set<SDL_Keycode> keysPressed;
     std::set<SDL_Keycode> keysHeld;
     bool isKeyPressed(SDL_Keycode key) const {
