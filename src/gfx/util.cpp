@@ -123,12 +123,13 @@ SDL_GPUVertexInputState Gfx::createVertexInputState() {
 }
 
 // generic handler for copying vertex data into buffers
-void Gfx::copyVertexDataIntoBuffer(
+template <typename T>
+void copyVertexDataIntoBufferImpl(
 	SDL_GPUDevice *device, SDL_GPUBuffer *vertBuf, SDL_GPUBuffer *indexBuf,
-	std::vector<RenderVertex> *verts, std::vector<Uint16> *indices
+	std::vector<T>& verts, std::vector<Uint16>& indices
 ) {
-	Uint32 vSize = sizeof(RenderVertex) * verts->size();
-	Uint32 iSize = sizeof(Uint16) * indices->size();
+	Uint32 vSize = sizeof(T) * verts.size();
+	Uint32 iSize = sizeof(Uint16) * indices.size();
 
 	// pump vertex data into transfer buffer
 	SDL_GPUTransferBuffer *vertTransferBuf = SDL_CreateGPUTransferBuffer(
@@ -138,9 +139,9 @@ void Gfx::copyVertexDataIntoBuffer(
 			.size = vSize,
 		}
 	);
-	RenderVertex* vertData = static_cast<RenderVertex*>(SDL_MapGPUTransferBuffer(device, vertTransferBuf, false));
-	for (int i=0; i < verts->size(); i++) {
-		vertData[i] = verts->at(i);
+	T* vertData = static_cast<T*>(SDL_MapGPUTransferBuffer(device, vertTransferBuf, false));
+	for (int i=0; i < verts.size(); i++) {
+		vertData[i] = verts.at(i);
 	}
 	SDL_UnmapGPUTransferBuffer(device, vertTransferBuf);
 
@@ -153,8 +154,8 @@ void Gfx::copyVertexDataIntoBuffer(
 		}
 	);
 	Uint16* indexData = static_cast<Uint16*>(SDL_MapGPUTransferBuffer(device, idxTransferBuf, false));
-	for (int i=0; i < indices->size(); i++) {
-		indexData[i] = indices->at(i);
+	for (int i=0; i < indices.size(); i++) {
+		indexData[i] = indices.at(i);
 	}
 	SDL_UnmapGPUTransferBuffer(device, idxTransferBuf);
 
@@ -196,6 +197,13 @@ void Gfx::copyVertexDataIntoBuffer(
 	// clean up transfer buffers
 	SDL_ReleaseGPUTransferBuffer(device, vertTransferBuf);
 	SDL_ReleaseGPUTransferBuffer(device, idxTransferBuf);
+}
+
+void Gfx::copyVertexDataIntoBuffer(
+	SDL_GPUDevice *device, SDL_GPUBuffer *vertBuf, SDL_GPUBuffer *indexBuf,
+	std::vector<RenderVertex>& verts, std::vector<Uint16>& indices
+) {
+	copyVertexDataIntoBufferImpl(device, vertBuf, indexBuf, verts, indices);
 }
 
 #pragma endregion Pipeline helpers

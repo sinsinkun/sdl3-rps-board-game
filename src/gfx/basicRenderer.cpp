@@ -482,7 +482,7 @@ SDL_GPUTexture* BasicRenderer::createTextTexture(
     .usage = SDL_GPU_BUFFERUSAGE_INDEX,
     .size = (Uint32)(sizeof(Uint16) * indices.size()),
   });
-  copyVertexDataIntoBuffer(device, vertexBuffer, indexBuffer, &vertices, &indices);
+  copyVertexDataIntoBuffer(device, vertexBuffer, indexBuffer, vertices, indices);
 
   // render text onto texture
   SDL_GPUCommandBuffer *cmdBuf = SDL_AcquireGPUCommandBuffer(device);

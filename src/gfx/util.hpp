@@ -48,7 +48,7 @@ namespace Gfx {
   );
   void copyVertexDataIntoBuffer(
     SDL_GPUDevice *device, SDL_GPUBuffer *vertBuf, SDL_GPUBuffer *indexBuf,
-    std::vector<RenderVertex> *verts, std::vector<Uint16> *indices
+    std::vector<RenderVertex> &verts, std::vector<Uint16> &indices
   );
   SDL_GPUVertexInputState createVertexInputState();
 
