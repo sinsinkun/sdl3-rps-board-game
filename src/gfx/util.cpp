@@ -270,13 +270,14 @@ glm::mat4x4 Gfx::viewMatrix(RenderCamera const &cam) {
   return glm::lookAt(cam.pos, cam.lookAt, cam.up);
 }
 
+// note: default perspective/ortho uses [-1,1] z-mapping, but vulkan requires [0,1]
 glm::mat4x4 Gfx::projMatrix(RenderCamera const &cam) {
   if (cam.perspective) {
-    return glm::perspective(cam.fovY, cam.viewWidth / cam.viewHeight, cam.near, cam.far);
+    return glm::perspectiveZO(cam.fovY, cam.viewWidth / cam.viewHeight, cam.near, cam.far);
   } else {
     float hw = cam.viewWidth / 2.0f;
     float hh = cam.viewHeight / 2.0f;
-    return glm::ortho(-hw, hw, -hh, hh, cam.near, cam.far);
+    return glm::orthoZO(-hw, hw, -hh, hh, cam.near, cam.far);
   }
 }
 

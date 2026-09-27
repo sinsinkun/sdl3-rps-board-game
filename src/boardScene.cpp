@@ -75,7 +75,12 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     renderer->swapTexturesOnObjects(boardTiles[0][2].objectId, boardTiles[1][2].objectId);
   }
   if (sys.mouseClickState == MouseClickState::DOWN) {
-    SDL_Log("Mouse position: %f, %f", sys.mousePosScreenSpace.x, sys.mousePosScreenSpace.y);
+    Gfx::RenderObject& obj = renderer->getMutableObject(boardTiles[2][2].objectId);
+    // position translates 1:1, but camera is centered on the screen
+    float xPos = sys.mousePosScreenSpace.x - (screenSize.x / 2.0);
+    float yPos = (screenSize.y / 2.0) - sys.mousePosScreenSpace.y;
+    obj.pos = glm::vec3(xPos, yPos, 10.0);
+    obj.albedo = Gfx::RED;
   }
 
   return SDL_APP_CONTINUE;
