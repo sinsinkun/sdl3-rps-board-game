@@ -545,7 +545,7 @@ void BasicRenderer::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target)
   SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
 		.texture = target,
 		.clear_color = clearColor,
-		.load_op = SDL_GPU_LOADOP_LOAD,
+		.load_op = SDL_GPU_LOADOP_CLEAR,
 		.store_op = SDL_GPU_STOREOP_STORE,
 	}, 1, new SDL_GPUDepthStencilTargetInfo {
     .texture = depthTx,
