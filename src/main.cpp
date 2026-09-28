@@ -3,6 +3,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "app.hpp"
+#include "boardScene.hpp"
 
 using namespace App;
 
