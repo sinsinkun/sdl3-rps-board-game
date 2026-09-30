@@ -366,7 +366,111 @@ int BasicRenderer::addObject(Primitive const &shape) {
   return addObject(shape.vertices);
 }
 
-void BasicRenderer::addTextureToObject(int id, SDL_GPUTexture *texture, glm::vec2 textureSize) {
+void BasicRenderer::updateObjectModel(
+  int id,
+  std::vector<RenderVertex> const &vertices,
+  std::vector<Uint16> const &indices
+) {
+  if (id < 0 || id >= renderObjects.size()) {
+    SDL_Log("ERR: Tried to access render object that doesn't exist %d", id);
+    return;
+  }
+  // create vertex buffer
+  Uint32 vSize = sizeof(RenderVertex) * vertices.size();
+  SDL_GPUBuffer *vBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
+    .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+    .size = vSize
+  });
+  // create index buffer
+  Uint32 iSize = sizeof(Uint16) * indices.size();
+  SDL_GPUBuffer *iBuffer = SDL_CreateGPUBuffer(device, new SDL_GPUBufferCreateInfo {
+    .usage = SDL_GPU_BUFFERUSAGE_INDEX,
+    .size = iSize
+  });
+
+  // pump vertex data into transfer buffer
+  SDL_GPUTransferBuffer *vertTransferBuf = SDL_CreateGPUTransferBuffer(
+    device,
+    new SDL_GPUTransferBufferCreateInfo {
+      .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+      .size = vSize,
+    }
+  );
+  RenderVertex* vertData = static_cast<RenderVertex*>(SDL_MapGPUTransferBuffer(
+    device, vertTransferBuf, false
+  ));
+  for (int i=0; i < vertices.size(); i++) {
+    vertData[i] = vertices.at(i);
+  }
+  SDL_UnmapGPUTransferBuffer(device, vertTransferBuf);
+
+  // pump index data into transfer buffer
+  SDL_GPUTransferBuffer *idxTransferBuf = SDL_CreateGPUTransferBuffer(
+    device,
+    new SDL_GPUTransferBufferCreateInfo {
+      .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+      .size = iSize,
+    }
+  );
+  Uint16* indexData = static_cast<Uint16*>(SDL_MapGPUTransferBuffer(
+    device, idxTransferBuf, false
+  ));
+  for (int i=0; i < indices.size(); i++) {
+    indexData[i] = indices.at(i);
+  }
+  SDL_UnmapGPUTransferBuffer(device, idxTransferBuf);
+
+  // create cmd buffer + copy pass
+	SDL_GPUCommandBuffer *cmdBuf = SDL_AcquireGPUCommandBuffer(device);
+	SDL_GPUCopyPass *copyPass = SDL_BeginGPUCopyPass(cmdBuf);
+
+  // upload vertex buffer
+  SDL_UploadToGPUBuffer(
+    copyPass,
+    new SDL_GPUTransferBufferLocation {
+      .transfer_buffer = vertTransferBuf,
+      .offset = 0,
+    },
+    new SDL_GPUBufferRegion {
+      .buffer = vBuffer,
+      .offset = 0,
+      .size = vSize,
+    },
+    false
+  );
+  // upload index buffer
+  SDL_UploadToGPUBuffer(
+    copyPass,
+    new SDL_GPUTransferBufferLocation {
+      .transfer_buffer = idxTransferBuf,
+      .offset = 0,
+    },
+    new SDL_GPUBufferRegion {
+      .buffer = iBuffer,
+      .offset = 0,
+      .size = iSize,
+    },
+    false
+  );
+
+  // clean up passes
+	SDL_EndGPUCopyPass(copyPass);
+	if (!SDL_SubmitGPUCommandBuffer(cmdBuf)) {
+    SDL_Log("Failed to upload to buffers - %s", SDL_GetError());
+  };
+  // release transfer buffers
+  SDL_ReleaseGPUTransferBuffer(device, vertTransferBuf);
+  SDL_ReleaseGPUTransferBuffer(device, idxTransferBuf);
+
+  // update object
+  RenderObject& obj = renderObjects.at(id);
+  obj.vertexBuffer = vBuffer;
+  obj.indexBuffer = iBuffer;
+  obj.vertexCount = (int)(vertices.size());
+  obj.indexCount = (int)(indices.size());
+}
+
+void BasicRenderer::updateObjectTexture(int id, SDL_GPUTexture *texture, glm::vec2 textureSize) {
   if (id < 0 || id >= renderObjects.size()) {
     SDL_Log("ERR: Tried to access render object that doesn't exist %d", id);
     return;
@@ -376,7 +480,7 @@ void BasicRenderer::addTextureToObject(int id, SDL_GPUTexture *texture, glm::vec
   renderObjects.at(id).textureSize = textureSize;
 }
 
-void BasicRenderer::clearTextureOnObject(int id) {
+void BasicRenderer::clearObjectTexture(int id) {
   if (id < 0 || id >= renderObjects.size()) {
     SDL_Log("ERR: Tried to access render object that doesn't exist %d", id);
     return;
@@ -395,7 +499,7 @@ void BasicRenderer::clearTextureOnObject(int id) {
   renderObjects.at(id).texture = texture;
 }
 
-void BasicRenderer::swapTexturesOnObjects(int id1, int id2) {
+void BasicRenderer::swapObjectTextures(int id1, int id2) {
   if (id1 < 0 || id1 >= renderObjects.size()) {
     SDL_Log("ERR: Tried to access render object that doesn't exist %d", id1);
     return;
@@ -533,7 +637,6 @@ SDL_GPUTexture* BasicRenderer::createTextTexture(
   SDL_ReleaseGPUBuffer(device, indexBuffer);
   TTF_DestroyText(ttfText);
 
-  SDL_Log("Created texture for text (0x%p)", textTexture);
   return textTexture;
 }
 

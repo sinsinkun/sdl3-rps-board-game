@@ -29,11 +29,14 @@ namespace Gfx {
     int addObject(std::vector<Gfx::RenderVertex> const &vertices);
     int addObject(std::vector<Gfx::RenderVertex> const &vertices, std::vector<Uint16> const &indices);
     int addObject(Gfx::Primitive const &shape);
-    void addTextureToObject(int id, SDL_GPUTexture *texture, glm::vec2 textureSize);
-    void clearTextureOnObject(int id);
-    void swapTexturesOnObjects(int id1, int id2);
+    // do not run this within a render pass
+    void updateObjectModel(int id, std::vector<Gfx::RenderVertex> const &vertices, std::vector<Uint16> const &indices);
+    void updateObjectTexture(int id, SDL_GPUTexture *texture, glm::vec2 textureSize);
+    void clearObjectTexture(int id);
+    void swapObjectTextures(int id1, int id2);
     // remember to dispose of this texture after use
     // (attaching a texture to a RenderObject will automatically dispose)
+    // do not run this within a render pass
     SDL_GPUTexture* createTextTexture(
       std::string text,
       glm::vec3 pos,
