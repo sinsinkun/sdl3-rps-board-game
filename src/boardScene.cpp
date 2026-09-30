@@ -2,6 +2,8 @@
 
 using namespace App;
 
+#pragma region helpers
+
 void addBoardTiles(BoardTile boardTiles[5][5], Gfx::BasicRenderer *renderer) {
   glm::vec3 positions[5][5] = {
     glm::vec3 {-200.0, 200.0, 0.0},
@@ -101,19 +103,6 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   playerTiles.scissors.position = scissorsPos;
 }
 
-BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine) : Scene() {
-  // initialize gpu pipeline
-  renderer = new Gfx::BasicRenderer(targetFormat, gpu, Gfx::PT_Triangle, SDL_GPU_CULLMODE_BACK, 800, 600);
-  renderer->cam = Gfx::RenderCamera {
-    .perspective = false
-  };
-  renderer->enableTextGeneration(SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, textEngine, "assets/font.ttf", 24);
-
-  addBoardTiles(boardTiles, renderer);
-  addPlayerTiles(players[0], 1, renderer);
-  addPlayerTiles(players[1], 2, renderer);
-}
-
 glm::vec2 getCursorWorldSpace(glm::vec2 mousePos, glm::vec2 screenSize) {
   // position translates 1:1, but camera is centered on the screen
   float xPos = mousePos.x - (screenSize.x / 2.0);
@@ -148,6 +137,37 @@ BoardTile* findNearestBoardTile(BoardTile* tileToMove, BoardTile boardTiles[5][5
   return nearestTile;
 }
 
+bool isSelfColliding(PlayerTiles const &player, int activeId, glm::vec3 const &targetPos) {
+  if (player.rock.objectId != activeId &&targetPos == player.rock.position) {
+    SDL_Log("WARN: colliding with rock - resetting position");
+    return true;
+  }
+  if (player.paper.objectId != activeId &&targetPos == player.paper.position) {
+    SDL_Log("WARN: colliding with paper - resetting position");
+    return true;
+  }
+  if (player.scissors.objectId != activeId &&targetPos == player.scissors.position) {
+    SDL_Log("WARN: colliding with scissors - resetting position");
+    return true;
+  }
+  return false;
+}
+
+#pragma endregion helpers
+
+BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine) : Scene() {
+  // initialize gpu pipeline
+  renderer = new Gfx::BasicRenderer(targetFormat, gpu, Gfx::PT_Triangle, SDL_GPU_CULLMODE_BACK, 800, 600);
+  renderer->cam = Gfx::RenderCamera {
+    .perspective = false
+  };
+  renderer->enableTextGeneration(SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, textEngine, "assets/font.ttf", 24);
+
+  addBoardTiles(boardTiles, renderer);
+  addPlayerTiles(players[0], 1, renderer);
+  addPlayerTiles(players[1], 2, renderer);
+}
+
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   // resize if necessary
   if (sys.winSize.x != screenSize.x || sys.winSize.y != screenSize.y) {
@@ -156,9 +176,9 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   }
   // handle inputs
   glm::vec2 cursorPos = getCursorWorldSpace(sys.mousePosScreenSpace, screenSize);
+  int rpsNum = findMouseOverRps(cursorPos, players[activePlayer]);
   // 1. find active file
   if (sys.mouseClickState == MouseClickState::DOWN && activeTile == NULL) {
-    int rpsNum = findMouseOverRps(cursorPos, players[activePlayer]);
     if (rpsNum == 1) activeTile = &players[activePlayer].rock;
     else if (rpsNum == 2) activeTile = &players[activePlayer].paper;
     else if (rpsNum == 3) activeTile = &players[activePlayer].scissors;
@@ -187,11 +207,15 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
       obj.pos = activeTileStartingPos;
     } else {
-      // todo: prevent collision with own tiles
+      glm::vec3 targetPos = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);
+      // prevent collision with own tiles
+      if (isSelfColliding(players[activePlayer], activeTile->objectId, targetPos)) {
+        targetPos = activeTileStartingPos;
+      }
       // move activeTile to new tile
-      activeTile->position = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);
+      activeTile->position = targetPos;
       Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
-      obj.pos = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);
+      obj.pos = targetPos;
       // todo: resolve collision with opponent tiles
       // todo: check for win condition
       // todo: switch active player
