@@ -80,7 +80,7 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   );
 
   int rockId = renderer->addObject(tile);
-  renderer->addTextureToObject(rockId, rockTxt, glm::vec2(100.0, 100.0));
+  renderer->updateObjectTexture(rockId, rockTxt, glm::vec2(100.0, 100.0));
   Gfx::RenderObject& rock = renderer->getMutableObject(rockId);
   rock.pos = rockPos;
   playerTiles.rock.objectId = rockId;
@@ -88,13 +88,13 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
 
   int paperId = renderer->addObject(tile);
   Gfx::RenderObject& paper = renderer->getMutableObject(paperId);
-  renderer->addTextureToObject(paperId, paperTxt, glm::vec2(100.0, 100.0));
+  renderer->updateObjectTexture(paperId, paperTxt, glm::vec2(100.0, 100.0));
   paper.pos = paperPos;
   playerTiles.paper.objectId = paperId;
   playerTiles.paper.position = paperPos;
 
   int scissorsId = renderer->addObject(tile);
-  renderer->addTextureToObject(scissorsId, scissorsTxt, glm::vec2(100.0, 100.0));
+  renderer->updateObjectTexture(scissorsId, scissorsTxt, glm::vec2(100.0, 100.0));
   Gfx::RenderObject& scissors = renderer->getMutableObject(scissorsId);
   scissors.pos = scissorsPos;
   playerTiles.scissors.objectId = scissorsId;
@@ -155,9 +155,6 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     screenSize = sys.winSize;
   }
   // handle inputs
-  if (sys.isKeyPressed(SDLK_A)) {
-    renderer->swapTexturesOnObjects(boardTiles[0][2].objectId, boardTiles[1][2].objectId);
-  }
   glm::vec2 cursorPos = getCursorWorldSpace(sys.mousePosScreenSpace, screenSize);
   // 1. find active file
   if (sys.mouseClickState == MouseClickState::DOWN && activeTile == NULL) {
@@ -171,37 +168,36 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   }
   // 2. handle movement of active tile
   else if (sys.mouseClickState == MouseClickState::DOWN && activeTile != NULL) {
-    activeTile->position = glm::vec3(cursorPos.x, cursorPos.y, 1.0);
+    // restrict movement to 100px radius around starting position
+    glm::vec3 targetPos = glm::vec3(cursorPos.x, cursorPos.y, 1.0);
+    activeTile->position = targetPos;
     Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
-    obj.pos = glm::vec3(cursorPos.x, cursorPos.y, 1.0);
+    obj.pos = targetPos;
   }
-  // 3. handle snapping of active tile
+  // 3. handle dropping of active tile
   else if (sys.mouseClickState == MouseClickState::UP && activeTile != NULL) {
     BoardTile* nearestTile = findNearestBoardTile(activeTile, boardTiles);
+    // reset to original position if nearestTile not found
     if (nearestTile == NULL) {
       SDL_Log(
         "Could not find nearest tile - something went wrong. activeTile pos: (%f, %f, %f)", 
         activeTile->position.x, activeTile->position.y, activeTile->position.z
       );
+      activeTile->position = activeTileStartingPos;
+      Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
+      obj.pos = activeTileStartingPos;
     } else {
-      activeTile->position = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);;
+      // todo: prevent collision with own tiles
+      // move activeTile to new tile
+      activeTile->position = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);
       Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
       obj.pos = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);
-      if (
-        nearestTile->position.x != activeTileStartingPos.x || 
-        nearestTile->position.y != activeTileStartingPos.y
-      ) {
-        // a valid move -> turn switches
-        activePlayer = activePlayer == 0 ? 1 : 0;
-      }
+      // todo: resolve collision with opponent tiles
+      // todo: check for win condition
+      // todo: switch active player
     }
     activeTile = NULL;
   }
-  // 4. TODO resolve board state
-  // - prevent collision with own tiles
-  // - resolve collisions between player tiles
-  // - switch active player
-  // - check for win condition
 
   return SDL_APP_CONTINUE;
 }
