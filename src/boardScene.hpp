@@ -3,20 +3,15 @@
 #include "app.hpp"
 
 namespace App {
-  enum BoardTileState {
-    DEFAULT,
-    ACCESSIBLE,
-    ROCK,
-    PAPER,
-    SCISSORS,
-  };
-
   struct BoardTile {
     int objectId = -1;
     glm::vec3 position = glm::vec3(0.0f);
-    BoardTileState state = BoardTileState::DEFAULT;
   };
-
+  struct PlayerTiles {
+    BoardTile rock;
+    BoardTile paper;
+    BoardTile scissors;
+  };
   class BoardScene: public Scene {
   public:
     BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine);
@@ -28,5 +23,9 @@ namespace App {
     glm::vec2 screenSize = glm::vec2(0.0f);
   private:
     BoardTile boardTiles[5][5];
+    PlayerTiles players[2];
+    int activePlayer = 0;
+    BoardTile* activeTile = NULL;
+    glm::vec3 activeTileStartingPos = glm::vec3(0.0f);
   };
 }

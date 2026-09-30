@@ -11,7 +11,7 @@
 #include "gfx/basicRenderer.hpp"
 
 namespace App {
-  const int MAX_FPS = 10000;
+  const int MAX_FPS = 1000;
   enum MouseClickState { NONE, DOWN, UP };
   class SystemUpdates {
   public:

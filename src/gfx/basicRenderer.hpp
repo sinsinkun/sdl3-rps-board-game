@@ -18,6 +18,7 @@ namespace Gfx {
       Uint32 screenWidth,
       Uint32 screenHeight
     );
+    // the targetFormat need to match the format of the text textures
     void enableTextGeneration(
       SDL_GPUTextureFormat targetFormat,
       TTF_TextEngine *textEngine,
