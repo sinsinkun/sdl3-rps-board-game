@@ -139,15 +139,12 @@ BoardTile* findNearestBoardTile(BoardTile* tileToMove, BoardTile boardTiles[5][5
 
 bool isSelfColliding(PlayerTiles const &player, int activeId, glm::vec3 const &targetPos) {
   if (player.rock.objectId != activeId &&targetPos == player.rock.position) {
-    SDL_Log("WARN: colliding with rock - resetting position");
     return true;
   }
   if (player.paper.objectId != activeId &&targetPos == player.paper.position) {
-    SDL_Log("WARN: colliding with paper - resetting position");
     return true;
   }
   if (player.scissors.objectId != activeId &&targetPos == player.scissors.position) {
-    SDL_Log("WARN: colliding with scissors - resetting position");
     return true;
   }
   return false;
@@ -179,11 +176,21 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   int rpsNum = findMouseOverRps(cursorPos, players[activePlayer]);
   // 1. find active file
   if (sys.mouseClickState == MouseClickState::DOWN && activeTile == NULL) {
-    if (rpsNum == 1) activeTile = &players[activePlayer].rock;
-    else if (rpsNum == 2) activeTile = &players[activePlayer].paper;
-    else if (rpsNum == 3) activeTile = &players[activePlayer].scissors;
-    if (activeTile != NULL) {
-      activeTileStartingPos = activeTile->position;
+    switch (rpsNum) {
+      case 1: // rock
+        activeTile = &players[activePlayer].rock;
+        activeTileStartingPos = activeTile->position;
+        break;
+      case 2: // paper
+        activeTile = &players[activePlayer].paper;
+        activeTileStartingPos = activeTile->position;
+        break;
+      case 3: // scissors
+        activeTile = &players[activePlayer].scissors;
+        activeTileStartingPos = activeTile->position;
+        break;
+      default:
+        break;
     }
   }
   // 2. handle movement of active tile
@@ -192,7 +199,8 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     glm::vec3 targetPos = glm::vec3(cursorPos.x, cursorPos.y, 1.0);
     activeTile->position = targetPos;
     Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
-    obj.pos = targetPos;
+    // render the active object above other tiles
+    obj.pos = glm::vec3(targetPos.x, targetPos.y, 2.0);
   }
   // 3. handle dropping of active tile
   else if (sys.mouseClickState == MouseClickState::UP && activeTile != NULL) {
@@ -208,17 +216,71 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       obj.pos = activeTileStartingPos;
     } else {
       glm::vec3 targetPos = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);
+      int inactivePlayer = activePlayer == 0 ? 1 : 0;
       // prevent collision with own tiles
       if (isSelfColliding(players[activePlayer], activeTile->objectId, targetPos)) {
+        SDL_Log("Colliding with self - resetting position");
         targetPos = activeTileStartingPos;
+      }
+      // prevent moving to invalid position
+      if (glm::length(targetPos - activeTileStartingPos) > 100.0f) {
+        SDL_Log("Invalid target position");
+        targetPos = activeTileStartingPos;
+      }
+      // resolve collision with opponent tiles
+      switch (rpsNum) {
+        case 1: // rock
+          if (targetPos == players[inactivePlayer].rock.position) {
+            targetPos = activeTileStartingPos;
+          }
+          else if (targetPos == players[inactivePlayer].paper.position) {
+            Gfx::RenderObject& activeObj = renderer->getMutableObject(activeTile->objectId);
+            activeObj.visible = false;
+          }
+          else if (targetPos == players[inactivePlayer].scissors.position) {
+            Gfx::RenderObject& inactiveObj = renderer->getMutableObject(players[inactivePlayer].scissors.objectId);
+            inactiveObj.visible = false;
+          }
+          break;
+        case 2: // paper
+          if (targetPos == players[inactivePlayer].rock.position) {
+            Gfx::RenderObject& inactiveObj = renderer->getMutableObject(players[inactivePlayer].rock.objectId);
+            inactiveObj.visible = false;
+          }
+          else if (targetPos == players[inactivePlayer].paper.position) {
+            targetPos = activeTileStartingPos;
+          }
+          else if (targetPos == players[inactivePlayer].scissors.position) {
+            Gfx::RenderObject& activeObj = renderer->getMutableObject(activeTile->objectId);
+            activeObj.visible = false;
+          }
+          break;
+        case 3: // scissors
+          if (targetPos == players[inactivePlayer].rock.position) {
+            Gfx::RenderObject& activeObj = renderer->getMutableObject(activeTile->objectId);
+            activeObj.visible = false;
+          }
+          else if (targetPos == players[inactivePlayer].paper.position) {
+            Gfx::RenderObject& inactiveObj = renderer->getMutableObject(players[inactivePlayer].paper.objectId);
+            inactiveObj.visible = false;
+          }
+          else if (targetPos == players[inactivePlayer].scissors.position) {
+            targetPos = activeTileStartingPos;
+          }
+          break;
+        default:
+          break;
       }
       // move activeTile to new tile
       activeTile->position = targetPos;
       Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
       obj.pos = targetPos;
-      // todo: resolve collision with opponent tiles
       // todo: check for win condition
-      // todo: switch active player
+      // switch active player
+      if (targetPos != activeTileStartingPos) {
+        SDL_Log("Switching active player");
+        activePlayer = inactivePlayer;
+      }
     }
     activeTile = NULL;
   }
