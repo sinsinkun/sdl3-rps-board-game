@@ -23,6 +23,8 @@ List of expected assets:
 - msys2/ucrt64 is installed in the default directory (C:/msys64)
 - cmake is installed in the ucrt64 environment (`pacman -Ss cmake --> pacman -S mingw-w64-ucrt-x86_64-cmake`)
 - SDL3 is installed in the ucrt64 environment (`pacman -Ss sdl3 --> pacman -S mingw-w64-ucrt-x86_64-sdl3`)
+- SDL3_ttf is installed in the ucrt64 environment (`pacman -Ss sdl3-ttf --> pacman -S mingw-w64-ucrt-x86_64-sdl3-ttf`)
+- SDL3_image is installed in the ucrt64 environment (`pacman -Ss sdl3-image --> pacman -S mingw-w64-ucrt-x86_64-sdl3-image`)
 
 ### Generating Builds & Artifacts
 
@@ -31,6 +33,8 @@ List of expected assets:
 - run `cmake --build {{ build_folder_name }}` to generate artifacts from build files
 - note: it is OK to use the default terminal to build from build files once they are available
   - however, this means having a duplicate copy of `cmake` in both the ucrt64 environment and the native windows environment
+- debug version opens a console for logging errors
+- un-comment `set(CMAKE_BUILD_TYPE "Release")` in CMakeLists.txt to build a release version with no console
 
 ### Generating shaders
 
