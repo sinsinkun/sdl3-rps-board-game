@@ -2,7 +2,9 @@
 
 5x5 board - 2 player game - each player has 3 pieces: rock, paper, scissors
 
-objective: reach the other side of the board with any piece
+- objective: reach the other side of the board with any piece
+- each piece can only move up, down, left, or right
+- rock beats scissors, scissors beats paper, paper beats rock
 
 ## Assets
 All assets should go into the `asset` folder, in the same directory as the .exe file.
