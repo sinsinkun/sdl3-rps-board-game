@@ -13,6 +13,8 @@ List of expected assets:
 - SPIRV
   - obj-basic.frag.spv
   - obj.vert.spv
+  - ttf-rect.frag.spv
+  - ttf-rect.vert.spv
 - icon.png
 - font.ttf
 
