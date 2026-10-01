@@ -103,6 +103,20 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   playerTiles.scissors.position = scissorsPos;
 }
 
+void addResetButton(Gfx::BasicRenderer *renderer) {
+  Gfx::Primitive tile = Gfx::rect2d(120.0f, 40.0f, 0.0f);
+
+  SDL_GPUTexture *txtx = renderer->createTextTexture(
+    "Reset", glm::vec3(30.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLUE,
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 120, 40
+  );
+
+  int objId = renderer->addObject(tile);
+  renderer->updateObjectTexture(objId, txtx, glm::vec2(100.0, 100.0));
+  Gfx::RenderObject& obj = renderer->getMutableObject(objId);
+  obj.pos = glm::vec3(0.0f, 280.0f, 10.0f);
+}
+
 glm::vec2 getCursorWorldSpace(glm::vec2 mousePos, glm::vec2 screenSize) {
   // position translates 1:1, but camera is centered on the screen
   float xPos = mousePos.x - (screenSize.x / 2.0);
@@ -163,6 +177,7 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
   addBoardTiles(boardTiles, renderer);
   addPlayerTiles(players[0], 1, renderer);
   addPlayerTiles(players[1], 2, renderer);
+  addResetButton(renderer);
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
@@ -176,21 +191,23 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   int rpsNum = findMouseOverRps(cursorPos, players[activePlayer]);
   // 1. find active file
   if (sys.mouseClickState == MouseClickState::DOWN && activeTile == NULL) {
-    switch (rpsNum) {
-      case 1: // rock
-        activeTile = &players[activePlayer].rock;
-        activeTileStartingPos = activeTile->position;
-        break;
-      case 2: // paper
-        activeTile = &players[activePlayer].paper;
-        activeTileStartingPos = activeTile->position;
-        break;
-      case 3: // scissors
-        activeTile = &players[activePlayer].scissors;
-        activeTileStartingPos = activeTile->position;
-        break;
-      default:
-        break;
+    if (activePlayer == 0 || activePlayer == 1) {
+      switch (rpsNum) {
+        case 1: // rock
+          activeTile = &players[activePlayer].rock;
+          activeTileStartingPos = activeTile->position;
+          break;
+        case 2: // paper
+          activeTile = &players[activePlayer].paper;
+          activeTileStartingPos = activeTile->position;
+          break;
+        case 3: // scissors
+          activeTile = &players[activePlayer].scissors;
+          activeTileStartingPos = activeTile->position;
+          break;
+        default:
+          break;
+      }
     }
   }
   // 2. handle movement of active tile
@@ -275,14 +292,31 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       activeTile->position = targetPos;
       Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
       obj.pos = targetPos;
-      // todo: check for win condition
+      // check for win condition
+      bool gameEnded = false;
+      if (activePlayer == 0 && targetPos.x == 200.0f) {
+        SDL_Log("Player 1 wins");
+        gameEnded = true;
+      } else if (activePlayer == 1 && targetPos.x == -200.0f) {
+        SDL_Log("Player 2 wins");
+        gameEnded = true;
+      }
       // switch active player
       if (targetPos != activeTileStartingPos) {
         SDL_Log("Switching active player");
-        activePlayer = inactivePlayer;
+        activePlayer = gameEnded ? 99 : inactivePlayer;
       }
     }
     activeTile = NULL;
+  }
+  // 4. handle UI interaction
+  else if (sys.mouseClickState == MouseClickState::UP && activeTile == NULL) {
+    // check for reset btn click
+    glm::vec3 targetPos = glm::vec3(cursorPos.x, cursorPos.y, 10.0);
+    float distFromResetBtn = glm::length(glm::vec3(0.0f, 300.0f, 10.0f) - targetPos);
+    if (distFromResetBtn < 40.0) {
+      resetGameState();
+    }
   }
 
   return SDL_APP_CONTINUE;
@@ -293,6 +327,44 @@ SDL_AppResult BoardScene::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* s
   renderer->render(cmdBuf, screen);
 
   return SDL_APP_CONTINUE;
+}
+
+void BoardScene::resetGameState() {
+  // reset player 1
+  players[0].rock.position = glm::vec3 {-200.0, -100.0, 1.0};
+  Gfx::RenderObject& rock1 = renderer->getMutableObject(players[0].rock.objectId);
+  rock1.pos = glm::vec3 {-200.0, -100.0, 1.0};
+  rock1.visible = true;
+
+  players[0].paper.position = glm::vec3 {-200.0, 0.0, 1.0};
+  Gfx::RenderObject& paper1 = renderer->getMutableObject(players[0].paper.objectId);
+  paper1.pos = glm::vec3 {-200.0, 0.0, 1.0};
+  paper1.visible = true;
+
+  players[0].scissors.position = glm::vec3 {-200.0, 100.0, 1.0};
+  Gfx::RenderObject& scissors1 = renderer->getMutableObject(players[0].scissors.objectId);
+  scissors1.pos = glm::vec3 {-200.0, 100.0, 1.0};
+  scissors1.visible = true;
+
+  // reset player 2
+  players[1].rock.position = glm::vec3 {200.0, 100.0, 1.0};
+  Gfx::RenderObject& rock2 = renderer->getMutableObject(players[1].rock.objectId);
+  rock2.pos = glm::vec3 {200.0, 100.0, 1.0};
+  rock2.visible = true;
+
+  players[1].paper.position = glm::vec3 {200.0, 0.0, 1.0};
+  Gfx::RenderObject& paper2 = renderer->getMutableObject(players[1].paper.objectId);
+  paper2.pos = glm::vec3 {200.0, 0.0, 1.0};
+  paper2.visible = true;
+
+  players[1].scissors.position = glm::vec3 {200.0,-100.0, 1.0};
+  Gfx::RenderObject& scissors2 = renderer->getMutableObject(players[1].scissors.objectId);
+  scissors2.pos = glm::vec3 {200.0, -100.0, 1.0};
+  scissors2.visible = true;
+
+  // reset active player
+  activePlayer = 0;
+  activeTile = NULL;
 }
 
 void BoardScene::destroy() {
