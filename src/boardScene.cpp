@@ -380,7 +380,6 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       }
       // switch active player
       if (targetPos != activeTileStartingPos) {
-        SDL_Log("Switching active player");
         if (!gameEnded && inactivePlayer == 0) {
           updateDisplayText(msgDisplay, renderer, "Player 1's turn");
         }

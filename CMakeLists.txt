@@ -21,6 +21,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/debug")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/debug")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/release")
 
+# Enable this to build release version
+# set(CMAKE_BUILD_TYPE "Release")
+
 # ------------------------------------------------------------------------------
 # Sources & Executable
 # ------------------------------------------------------------------------------
@@ -57,6 +60,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_image::SDL3_image-shared)
 # Copy dlls and assets to the Output Directory (Windows)
 # ------------------------------------------------------------------------------
 if(WIN32)
+    # hide console for release build
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WIN32_EXECUTABLE "$<CONFIG:Release>"
+    )
     add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
         # copy dlls

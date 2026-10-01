@@ -138,7 +138,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     float fps = (state.sys.deltaTime > 0.0f) ? (1.0f / state.sys.deltaTime) : 0.0f;
     // subtract to preserve overflow and prevent time drift
     state.sys.timeSinceLastFps -= SDL_NS_PER_SECOND;
-    SDL_Log("FPS: %.2f (Scene %d)", fps, state.currentScene);
+    // SDL_Log("FPS: %.2f (Scene %d)", fps, state.currentScene);
   }
 
   // update scene
