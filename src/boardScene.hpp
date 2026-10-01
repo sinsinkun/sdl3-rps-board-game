@@ -38,6 +38,16 @@ namespace App {
     glm::vec3 { 100.0, -200.0, 0.0},
     glm::vec3 { 200.0, -200.0, 0.0},
   };
+  const glm::vec3 playerPositions[6] = {
+    // player 1
+    tilePositions[1][0] + glm::vec3(0.0f, 0.0f, 1.0f),
+    tilePositions[2][0] + glm::vec3(0.0f, 0.0f, 1.0f),
+    tilePositions[3][0] + glm::vec3(0.0f, 0.0f, 1.0f),
+    // player 2
+    tilePositions[1][4] + glm::vec3(0.0f, 0.0f, 1.0f),
+    tilePositions[2][4] + glm::vec3(0.0f, 0.0f, 1.0f),
+    tilePositions[3][4] + glm::vec3(0.0f, 0.0f, 1.0f),
+  };
   struct BoardTile {
     int objectId = -1;
     glm::vec3 position = glm::vec3(0.0f);

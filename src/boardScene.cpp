@@ -29,14 +29,14 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   Gfx::Primitive tile = Gfx::rect2d(80.0f, 80.0f, 0.0f);
   glm::vec2 tileSize = glm::vec2(80.0f, 80.0f);
   // set positions
-  glm::vec3 rockPos = tilePositions[1][0] + glm::vec3(0.0f, 0.0f, 1.0f);
-  glm::vec3 paperPos = tilePositions[2][0] + glm::vec3(0.0f, 0.0f, 1.0f);
-  glm::vec3 scissorsPos = tilePositions[3][0] + glm::vec3(0.0f, 0.0f, 1.0f);
+  glm::vec3 rockPos = playerPositions[0];
+  glm::vec3 paperPos = playerPositions[1];
+  glm::vec3 scissorsPos = playerPositions[2];
   SDL_FColor bgColor = Gfx::PURPLE;
   if (variation == 2) {
-    rockPos = tilePositions[1][4] + glm::vec3(0.0f, 0.0f, 1.0f);
-    paperPos = tilePositions[2][4] + glm::vec3(0.0f, 0.0f, 1.0f);
-    scissorsPos = tilePositions[3][4] + glm::vec3(0.0f, 0.0f, 1.0f);
+    rockPos = playerPositions[3];
+    paperPos = playerPositions[4];
+    scissorsPos = playerPositions[5];
     bgColor = Gfx::ORANGE;
   }
 
@@ -217,7 +217,6 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   }
   // 2. handle movement of active tile
   else if (sys.mouseClickState == MouseClickState::DOWN && activeTile != NULL) {
-    // restrict movement to 100px radius around starting position
     glm::vec3 targetPos = glm::vec3(cursorPos.x, cursorPos.y, 1.0);
     activeTile->position = targetPos;
     Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
@@ -377,35 +376,35 @@ SDL_AppResult BoardScene::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* s
 
 void BoardScene::resetGameState() {
   // reset player 1
-  players[0].rock.position = glm::vec3 {-200.0, -100.0, 1.0};
+  players[0].rock.position = playerPositions[0];
   Gfx::RenderObject& rock1 = renderer->getMutableObject(players[0].rock.objectId);
-  rock1.pos = glm::vec3 {-200.0, -100.0, 1.0};
+  rock1.pos = playerPositions[0];
   rock1.visible = true;
 
-  players[0].paper.position = glm::vec3 {-200.0, 0.0, 1.0};
+  players[0].paper.position = playerPositions[1];
   Gfx::RenderObject& paper1 = renderer->getMutableObject(players[0].paper.objectId);
-  paper1.pos = glm::vec3 {-200.0, 0.0, 1.0};
+  paper1.pos = playerPositions[1];
   paper1.visible = true;
 
-  players[0].scissors.position = glm::vec3 {-200.0, 100.0, 1.0};
+  players[0].scissors.position = playerPositions[2];
   Gfx::RenderObject& scissors1 = renderer->getMutableObject(players[0].scissors.objectId);
-  scissors1.pos = glm::vec3 {-200.0, 100.0, 1.0};
+  scissors1.pos = playerPositions[2];
   scissors1.visible = true;
 
   // reset player 2
-  players[1].rock.position = glm::vec3 {200.0, 100.0, 1.0};
+  players[1].rock.position = playerPositions[3];
   Gfx::RenderObject& rock2 = renderer->getMutableObject(players[1].rock.objectId);
-  rock2.pos = glm::vec3 {200.0, 100.0, 1.0};
+  rock2.pos = playerPositions[3];
   rock2.visible = true;
 
-  players[1].paper.position = glm::vec3 {200.0, 0.0, 1.0};
+  players[1].paper.position = playerPositions[4];
   Gfx::RenderObject& paper2 = renderer->getMutableObject(players[1].paper.objectId);
-  paper2.pos = glm::vec3 {200.0, 0.0, 1.0};
+  paper2.pos = playerPositions[4];
   paper2.visible = true;
 
-  players[1].scissors.position = glm::vec3 {200.0,-100.0, 1.0};
+  players[1].scissors.position = playerPositions[5];
   Gfx::RenderObject& scissors2 = renderer->getMutableObject(players[1].scissors.objectId);
-  scissors2.pos = glm::vec3 {200.0, -100.0, 1.0};
+  scissors2.pos = playerPositions[5];
   scissors2.visible = true;
 
   // reset active player
