@@ -5,37 +5,6 @@ using namespace App;
 #pragma region helpers
 
 void addBoardTiles(BoardTile boardTiles[5][5], Gfx::BasicRenderer *renderer) {
-  glm::vec3 positions[5][5] = {
-    glm::vec3 {-200.0, 200.0, 0.0},
-    glm::vec3 {-100.0, 200.0, 0.0},
-    glm::vec3 {   0.0, 200.0, 0.0},
-    glm::vec3 { 100.0, 200.0, 0.0},
-    glm::vec3 { 200.0, 200.0, 0.0},
-
-    glm::vec3 {-200.0, 100.0, 0.0},
-    glm::vec3 {-100.0, 100.0, 0.0},
-    glm::vec3 {   0.0, 100.0, 0.0},
-    glm::vec3 { 100.0, 100.0, 0.0},
-    glm::vec3 { 200.0, 100.0, 0.0},
-
-    glm::vec3 {-200.0, 0.0, 0.0},
-    glm::vec3 {-100.0, 0.0, 0.0},
-    glm::vec3 {   0.0, 0.0, 0.0},
-    glm::vec3 { 100.0, 0.0, 0.0},
-    glm::vec3 { 200.0, 0.0, 0.0},
-
-    glm::vec3 {-200.0, -100.0, 0.0},
-    glm::vec3 {-100.0, -100.0, 0.0},
-    glm::vec3 {   0.0, -100.0, 0.0},
-    glm::vec3 { 100.0, -100.0, 0.0},
-    glm::vec3 { 200.0, -100.0, 0.0},
-    
-    glm::vec3 {-200.0, -200.0, 0.0},
-    glm::vec3 {-100.0, -200.0, 0.0},
-    glm::vec3 {   0.0, -200.0, 0.0},
-    glm::vec3 { 100.0, -200.0, 0.0},
-    glm::vec3 { 200.0, -200.0, 0.0},
-  };
   glm::vec2 tileSize = glm::vec2(90.0f, 90.0f);
   Gfx::Primitive tile = Gfx::rect2d(tileSize.x, tileSize.y, 0.0f);
 
@@ -43,14 +12,14 @@ void addBoardTiles(BoardTile boardTiles[5][5], Gfx::BasicRenderer *renderer) {
     for (int j=0; j<5; j++) {
       int objId = renderer->addObject(tile);
       Gfx::RenderObject& obj = renderer->getMutableObject(objId);
-      obj.pos = positions[i][j];
+      obj.pos = tilePositions[i][j];
       obj.albedo = Gfx::rgb(14, 71, 124);
       // mark goal points
       if (j == 0 || j == 4) {
         obj.albedo = Gfx::rgb(23, 112, 163);
       }
       boardTiles[i][j].objectId = objId;
-      boardTiles[i][j].position = positions[i][j];
+      boardTiles[i][j].position = tilePositions[i][j];
       boardTiles[i][j].size = tileSize;
     }
   }
@@ -60,32 +29,32 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   Gfx::Primitive tile = Gfx::rect2d(80.0f, 80.0f, 0.0f);
   glm::vec2 tileSize = glm::vec2(80.0f, 80.0f);
   // set positions
-  glm::vec3 rockPos = glm::vec3 {-200.0, -100.0, 1.0};
-  glm::vec3 paperPos = glm::vec3 {-200.0, 0.0, 1.0};
-  glm::vec3 scissorsPos = glm::vec3 {-200.0, 100.0, 1.0};
+  glm::vec3 rockPos = tilePositions[1][0] + glm::vec3(0.0f, 0.0f, 1.0f);
+  glm::vec3 paperPos = tilePositions[2][0] + glm::vec3(0.0f, 0.0f, 1.0f);
+  glm::vec3 scissorsPos = tilePositions[3][0] + glm::vec3(0.0f, 0.0f, 1.0f);
   SDL_FColor bgColor = Gfx::PURPLE;
   if (variation == 2) {
-    rockPos = glm::vec3 {200.0, 100.0, 1.0};
-    paperPos = glm::vec3 {200.0, 0.0, 1.0};
-    scissorsPos = glm::vec3 {200.0, -100.0, 1.0};
+    rockPos = tilePositions[1][4] + glm::vec3(0.0f, 0.0f, 1.0f);
+    paperPos = tilePositions[2][4] + glm::vec3(0.0f, 0.0f, 1.0f);
+    scissorsPos = tilePositions[3][4] + glm::vec3(0.0f, 0.0f, 1.0f);
     bgColor = Gfx::ORANGE;
   }
 
   SDL_GPUTexture *rockTxt = renderer->createTextTexture(
-    "Rock", glm::vec3(22.0, 38.0, 0.0), Gfx::WHITE, bgColor,
-    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 100, 100
+    "Rock", glm::vec3(20.0, 32.0, 0.0), Gfx::WHITE, bgColor,
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, (1.2f * tileSize)
   );
   SDL_GPUTexture *paperTxt = renderer->createTextTexture(
-    "Paper", glm::vec3(18.0, 38.0, 0.0), Gfx::WHITE, bgColor,
-    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 100, 100
+    "Paper", glm::vec3(16.0, 32.0, 0.0), Gfx::WHITE, bgColor,
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, (1.2f * tileSize)
   );
   SDL_GPUTexture *scissorsTxt = renderer->createTextTexture(
-    "Scissors", glm::vec3(4.0, 38.0, 0.0), Gfx::WHITE, bgColor,
-    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 100, 100
+    "Scissors", glm::vec3(2.0, 32.0, 0.0), Gfx::WHITE, bgColor,
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, (1.2f * tileSize)
   );
 
   int rockId = renderer->addObject(tile);
-  renderer->updateObjectTexture(rockId, rockTxt, glm::vec2(100.0, 100.0));
+  renderer->updateObjectTexture(rockId, rockTxt, tileSize);
   Gfx::RenderObject& rock = renderer->getMutableObject(rockId);
   rock.pos = rockPos;
   playerTiles.rock.objectId = rockId;
@@ -94,14 +63,14 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
 
   int paperId = renderer->addObject(tile);
   Gfx::RenderObject& paper = renderer->getMutableObject(paperId);
-  renderer->updateObjectTexture(paperId, paperTxt, glm::vec2(100.0, 100.0));
+  renderer->updateObjectTexture(paperId, paperTxt, tileSize);
   paper.pos = paperPos;
   playerTiles.paper.objectId = paperId;
   playerTiles.paper.position = paperPos;
   playerTiles.paper.size = tileSize;
 
   int scissorsId = renderer->addObject(tile);
-  renderer->updateObjectTexture(scissorsId, scissorsTxt, glm::vec2(100.0, 100.0));
+  renderer->updateObjectTexture(scissorsId, scissorsTxt, tileSize);
   Gfx::RenderObject& scissors = renderer->getMutableObject(scissorsId);
   scissors.pos = scissorsPos;
   playerTiles.scissors.objectId = scissorsId;
@@ -116,7 +85,7 @@ void addResetButton(BoardTile& resetBtn, Gfx::BasicRenderer *renderer) {
 
   SDL_GPUTexture *txtx = renderer->createTextTexture(
     "Reset", glm::vec3(30.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLUE,
-    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 120, 40
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, size
   );
 
   int objId = renderer->addObject(tile);
@@ -136,7 +105,7 @@ void addMsgDisplay(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer) {
 
   SDL_GPUTexture *txtx = renderer->createTextTexture(
     "Player 1's turn", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLACK,
-    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 240, 60
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, (1.5f * size)
   );
 
   int objId = renderer->addObject(tile);
@@ -146,6 +115,14 @@ void addMsgDisplay(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer) {
 
   msgDisplay.objectId = objId;
   msgDisplay.position = pos;
+}
+
+void updateDisplayText(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer, std::string text) {
+  SDL_GPUTexture *txtx = renderer->createTextTexture(
+    text, glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLACK,
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, glm::vec2(240.0f, 60.0f)
+  );
+  renderer->updateObjectTexture(msgDisplay.objectId, txtx, glm::vec2(160.0f, 40.0f));
 }
 
 glm::vec2 getCursorWorldSpace(glm::vec2 mousePos, glm::vec2 screenSize) {
@@ -194,19 +171,11 @@ bool isSelfColliding(PlayerTiles const &player, int activeId, glm::vec3 const &t
   return false;
 }
 
-void updateDisplayText(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer, std::string text) {
-  SDL_GPUTexture *txtx = renderer->createTextTexture(
-    text, glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLACK,
-    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 240, 60
-  );
-  renderer->updateObjectTexture(msgDisplay.objectId, txtx, glm::vec2(160.0f, 40.0f));
-}
-
 #pragma endregion helpers
 
 BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine) : Scene() {
   // initialize gpu pipeline
-  renderer = new Gfx::BasicRenderer(targetFormat, gpu, Gfx::PT_Triangle, SDL_GPU_CULLMODE_BACK, 800, 600);
+  renderer = new Gfx::BasicRenderer(targetFormat, gpu, Gfx::PT_Triangle, SDL_GPU_CULLMODE_BACK, glm::vec2(800.0f, 600.0f));
   renderer->cam = Gfx::RenderCamera {
     .perspective = false
   };
@@ -221,13 +190,9 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
-  // resize if necessary
-  if (sys.winSize.x != screenSize.x || sys.winSize.y != screenSize.y) {
-    renderer->resizeScreen((Uint32)sys.winSize.x, (Uint32)sys.winSize.y);
-    screenSize = sys.winSize;
-  }
+  renderer->updateWindowSize(sys.winSize);
   // handle inputs
-  glm::vec2 cursorPos = getCursorWorldSpace(sys.mousePosScreenSpace, screenSize);
+  glm::vec2 cursorPos = getCursorWorldSpace(sys.mousePosScreenSpace, sys.winSize);
   Rps rps = findMouseOverRps(cursorPos, players[activePlayer]);
   // 1. find active file
   if (sys.mouseClickState == MouseClickState::DOWN && activeTile == NULL) {
@@ -281,7 +246,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       }
       // prevent moving to invalid position
       if (glm::length(targetPos - activeTileStartingPos) > 100.0f) {
-        SDL_Log("Invalid target position (%f, %f, %f) -> (%f, %f, %f)",
+        SDL_Log("Invalid target position (%.2f, %.2f, %.2f) -> (%.2f, %.2f, %.2f)",
           activeTileStartingPos.x, activeTileStartingPos.y, activeTileStartingPos.z,
           targetPos.x, targetPos.y, targetPos.z
         );

@@ -6,6 +6,38 @@ namespace App {
   enum Rps {
     RPS_NONE, ROCK, PAPER, SCISSORS
   };
+  // note: this is in [y][x] format due to how arrays work
+  const glm::vec3 tilePositions[5][5] = {
+    glm::vec3 {-200.0, 200.0, 0.0},
+    glm::vec3 {-100.0, 200.0, 0.0},
+    glm::vec3 {   0.0, 200.0, 0.0},
+    glm::vec3 { 100.0, 200.0, 0.0},
+    glm::vec3 { 200.0, 200.0, 0.0},
+
+    glm::vec3 {-200.0, 100.0, 0.0},
+    glm::vec3 {-100.0, 100.0, 0.0},
+    glm::vec3 {   0.0, 100.0, 0.0},
+    glm::vec3 { 100.0, 100.0, 0.0},
+    glm::vec3 { 200.0, 100.0, 0.0},
+
+    glm::vec3 {-200.0, 0.0, 0.0},
+    glm::vec3 {-100.0, 0.0, 0.0},
+    glm::vec3 {   0.0, 0.0, 0.0},
+    glm::vec3 { 100.0, 0.0, 0.0},
+    glm::vec3 { 200.0, 0.0, 0.0},
+
+    glm::vec3 {-200.0, -100.0, 0.0},
+    glm::vec3 {-100.0, -100.0, 0.0},
+    glm::vec3 {   0.0, -100.0, 0.0},
+    glm::vec3 { 100.0, -100.0, 0.0},
+    glm::vec3 { 200.0, -100.0, 0.0},
+    
+    glm::vec3 {-200.0, -200.0, 0.0},
+    glm::vec3 {-100.0, -200.0, 0.0},
+    glm::vec3 {   0.0, -200.0, 0.0},
+    glm::vec3 { 100.0, -200.0, 0.0},
+    glm::vec3 { 200.0, -200.0, 0.0},
+  };
   struct BoardTile {
     int objectId = -1;
     glm::vec3 position = glm::vec3(0.0f);
@@ -36,7 +68,6 @@ namespace App {
     void destroy() override;
     // render pipeline
     Gfx::BasicRenderer *renderer;
-    glm::vec2 screenSize = glm::vec2(0.0f);
   private:
     BoardTile boardTiles[5][5];
     PlayerTiles players[2];
