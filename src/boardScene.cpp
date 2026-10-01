@@ -156,11 +156,11 @@ glm::vec2 getCursorWorldSpace(glm::vec2 mousePos, glm::vec2 screenSize) {
 }
 
 // 0: none, 1: rock, 2: paper, 3: scissors
-int findMouseOverRps(glm::vec2 cursorPos, PlayerTiles& activePlayer) {
-  if (activePlayer.rock.isCoordInsideTile(cursorPos)) return 1;
-  if (activePlayer.paper.isCoordInsideTile(cursorPos)) return 2;
-  if (activePlayer.scissors.isCoordInsideTile(cursorPos)) return 3;
-  return 0;
+Rps findMouseOverRps(glm::vec2 cursorPos, PlayerTiles& activePlayer) {
+  if (activePlayer.rock.isCoordInsideTile(cursorPos)) return Rps::ROCK;
+  if (activePlayer.paper.isCoordInsideTile(cursorPos)) return Rps::PAPER;
+  if (activePlayer.scissors.isCoordInsideTile(cursorPos)) return Rps::SCISSORS;
+  return Rps::RPS_NONE;
 }
 
 BoardTile* findNearestBoardTile(BoardTile* tileToMove, BoardTile boardTiles[5][5]) {
@@ -228,20 +228,20 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   }
   // handle inputs
   glm::vec2 cursorPos = getCursorWorldSpace(sys.mousePosScreenSpace, screenSize);
-  int rpsNum = findMouseOverRps(cursorPos, players[activePlayer]);
+  Rps rps = findMouseOverRps(cursorPos, players[activePlayer]);
   // 1. find active file
   if (sys.mouseClickState == MouseClickState::DOWN && activeTile == NULL) {
     if (activePlayer == 0 || activePlayer == 1) {
-      switch (rpsNum) {
-        case 1: // rock
+      switch (rps) {
+        case Rps::ROCK:
           activeTile = &players[activePlayer].rock;
           activeTileStartingPos = activeTile->position;
           break;
-        case 2: // paper
+        case Rps::PAPER:
           activeTile = &players[activePlayer].paper;
           activeTileStartingPos = activeTile->position;
           break;
-        case 3: // scissors
+        case Rps::SCISSORS:
           activeTile = &players[activePlayer].scissors;
           activeTileStartingPos = activeTile->position;
           break;
@@ -281,28 +281,38 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       }
       // prevent moving to invalid position
       if (glm::length(targetPos - activeTileStartingPos) > 100.0f) {
-        SDL_Log("Invalid target position");
+        SDL_Log("Invalid target position (%f, %f, %f) -> (%f, %f, %f)",
+          activeTileStartingPos.x, activeTileStartingPos.y, activeTileStartingPos.z,
+          targetPos.x, targetPos.y, targetPos.z
+        );
         targetPos = activeTileStartingPos;
       }
       // resolve collision with opponent tiles
-      switch (rpsNum) {
-        case 1: // rock
+      glm::vec3 inactivePos = glm::vec3(9999.0f, 9999.0f, 0.0f);
+      switch (rps) {
+        case Rps::ROCK:
           if (targetPos == players[inactivePlayer].rock.position) {
             targetPos = activeTileStartingPos;
           }
           else if (targetPos == players[inactivePlayer].paper.position) {
             Gfx::RenderObject& activeObj = renderer->getMutableObject(activeTile->objectId);
             activeObj.visible = false;
+            activeObj.pos = inactivePos;
+            activeTile->position = inactivePos;
           }
           else if (targetPos == players[inactivePlayer].scissors.position) {
             Gfx::RenderObject& inactiveObj = renderer->getMutableObject(players[inactivePlayer].scissors.objectId);
             inactiveObj.visible = false;
+            inactiveObj.pos = inactivePos;
+            players[inactivePlayer].scissors.position = inactivePos;
           }
           break;
-        case 2: // paper
+        case Rps::PAPER:
           if (targetPos == players[inactivePlayer].rock.position) {
             Gfx::RenderObject& inactiveObj = renderer->getMutableObject(players[inactivePlayer].rock.objectId);
             inactiveObj.visible = false;
+            inactiveObj.pos = inactivePos;
+            players[inactivePlayer].rock.position = inactivePos;
           }
           else if (targetPos == players[inactivePlayer].paper.position) {
             targetPos = activeTileStartingPos;
@@ -310,16 +320,22 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
           else if (targetPos == players[inactivePlayer].scissors.position) {
             Gfx::RenderObject& activeObj = renderer->getMutableObject(activeTile->objectId);
             activeObj.visible = false;
+            activeObj.pos = inactivePos;
+            activeTile->position = inactivePos;
           }
           break;
-        case 3: // scissors
+        case Rps::SCISSORS:
           if (targetPos == players[inactivePlayer].rock.position) {
             Gfx::RenderObject& activeObj = renderer->getMutableObject(activeTile->objectId);
             activeObj.visible = false;
+            activeObj.pos = inactivePos;
+            activeTile->position = inactivePos;
           }
           else if (targetPos == players[inactivePlayer].paper.position) {
             Gfx::RenderObject& inactiveObj = renderer->getMutableObject(players[inactivePlayer].paper.objectId);
             inactiveObj.visible = false;
+            inactiveObj.pos = inactivePos;
+            players[inactivePlayer].paper.position = inactivePos;
           }
           else if (targetPos == players[inactivePlayer].scissors.position) {
             targetPos = activeTileStartingPos;
@@ -342,6 +358,25 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
         SDL_Log("Player 2 wins");
         updateDisplayText(msgDisplay, renderer, "Player 2 WINS!");
         gameEnded = true;
+      }
+      // check that inactive player still has tiles
+      if (!gameEnded) {
+        Gfx::RenderObject& rock1 = renderer->getMutableObject(players[0].rock.objectId);
+        Gfx::RenderObject& paper1 = renderer->getMutableObject(players[0].paper.objectId);
+        Gfx::RenderObject& scissors1 = renderer->getMutableObject(players[0].scissors.objectId);
+        if (!rock1.visible && !paper1.visible && !scissors1.visible) {
+          SDL_Log("Player 2 win by wipeout");
+          updateDisplayText(msgDisplay, renderer, "Player 2 WINS!");
+          gameEnded = true;
+        }
+        Gfx::RenderObject& rock2 = renderer->getMutableObject(players[1].rock.objectId);
+        Gfx::RenderObject& paper2 = renderer->getMutableObject(players[1].paper.objectId);
+        Gfx::RenderObject& scissors2 = renderer->getMutableObject(players[1].scissors.objectId);
+        if (!rock2.visible && !paper2.visible && !scissors2.visible) {
+          SDL_Log("Player 1 win by wipeout");
+          updateDisplayText(msgDisplay, renderer, "Player 1 WINS!");
+          gameEnded = true;
+        }
       }
       // switch active player
       if (targetPos != activeTileStartingPos) {

@@ -3,6 +3,9 @@
 #include "app.hpp"
 
 namespace App {
+  enum Rps {
+    RPS_NONE, ROCK, PAPER, SCISSORS
+  };
   struct BoardTile {
     int objectId = -1;
     glm::vec3 position = glm::vec3(0.0f);
