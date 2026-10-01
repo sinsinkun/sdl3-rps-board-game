@@ -6,6 +6,18 @@ namespace App {
   struct BoardTile {
     int objectId = -1;
     glm::vec3 position = glm::vec3(0.0f);
+    glm::vec2 size = glm::vec2(0.0f);
+    bool isCoordInsideTile(glm::vec2 coord) {
+      float minX = position.x - (size.x / 2.0f);
+      float maxX = position.x + (size.x / 2.0f);
+      float minY = position.y - (size.y / 2.0f);
+      float maxY = position.y + (size.y / 2.0f);
+      bool isCoordInside = false;
+      if (coord.x >= minX && coord.x <= maxX && coord.y >= minY && coord.y <= maxY) {
+        isCoordInside = true;
+      }
+      return isCoordInside;
+    }
   };
   struct PlayerTiles {
     BoardTile rock;
@@ -28,5 +40,8 @@ namespace App {
     int activePlayer = 0;
     BoardTile* activeTile = NULL;
     glm::vec3 activeTileStartingPos = glm::vec3(0.0f);
+    // UI
+    BoardTile resetBtn;
+    BoardTile msgDisplay;
   };
 }

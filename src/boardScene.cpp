@@ -36,7 +36,8 @@ void addBoardTiles(BoardTile boardTiles[5][5], Gfx::BasicRenderer *renderer) {
     glm::vec3 { 100.0, -200.0, 0.0},
     glm::vec3 { 200.0, -200.0, 0.0},
   };
-  Gfx::Primitive tile = Gfx::rect2d(90.0f, 90.0f, 0.0f);
+  glm::vec2 tileSize = glm::vec2(90.0f, 90.0f);
+  Gfx::Primitive tile = Gfx::rect2d(tileSize.x, tileSize.y, 0.0f);
 
   for (int i=0; i<5; i++) {
     for (int j=0; j<5; j++) {
@@ -50,12 +51,14 @@ void addBoardTiles(BoardTile boardTiles[5][5], Gfx::BasicRenderer *renderer) {
       }
       boardTiles[i][j].objectId = objId;
       boardTiles[i][j].position = positions[i][j];
+      boardTiles[i][j].size = tileSize;
     }
   }
 }
 
 void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer *renderer) {
   Gfx::Primitive tile = Gfx::rect2d(80.0f, 80.0f, 0.0f);
+  glm::vec2 tileSize = glm::vec2(80.0f, 80.0f);
   // set positions
   glm::vec3 rockPos = glm::vec3 {-200.0, -100.0, 1.0};
   glm::vec3 paperPos = glm::vec3 {-200.0, 0.0, 1.0};
@@ -87,6 +90,7 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   rock.pos = rockPos;
   playerTiles.rock.objectId = rockId;
   playerTiles.rock.position = rockPos;
+  playerTiles.rock.size = tileSize;
 
   int paperId = renderer->addObject(tile);
   Gfx::RenderObject& paper = renderer->getMutableObject(paperId);
@@ -94,6 +98,7 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   paper.pos = paperPos;
   playerTiles.paper.objectId = paperId;
   playerTiles.paper.position = paperPos;
+  playerTiles.paper.size = tileSize;
 
   int scissorsId = renderer->addObject(tile);
   renderer->updateObjectTexture(scissorsId, scissorsTxt, glm::vec2(100.0, 100.0));
@@ -101,10 +106,13 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   scissors.pos = scissorsPos;
   playerTiles.scissors.objectId = scissorsId;
   playerTiles.scissors.position = scissorsPos;
+  playerTiles.scissors.size = tileSize;
 }
 
-void addResetButton(Gfx::BasicRenderer *renderer) {
-  Gfx::Primitive tile = Gfx::rect2d(120.0f, 40.0f, 0.0f);
+void addResetButton(BoardTile& resetBtn, Gfx::BasicRenderer *renderer) {
+  glm::vec2 size = glm::vec2(120.0f, 40.0f);
+  glm::vec3 pos = glm::vec3(0.0f, 280.0f, 10.0f);
+  Gfx::Primitive tile = Gfx::rect2d(size.x, size.y, 0.0f);
 
   SDL_GPUTexture *txtx = renderer->createTextTexture(
     "Reset", glm::vec3(30.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLUE,
@@ -112,9 +120,32 @@ void addResetButton(Gfx::BasicRenderer *renderer) {
   );
 
   int objId = renderer->addObject(tile);
-  renderer->updateObjectTexture(objId, txtx, glm::vec2(100.0, 100.0));
+  renderer->updateObjectTexture(objId, txtx, size);
   Gfx::RenderObject& obj = renderer->getMutableObject(objId);
-  obj.pos = glm::vec3(0.0f, 280.0f, 10.0f);
+  obj.pos = pos;
+
+  resetBtn.objectId = objId;
+  resetBtn.position = pos;
+  resetBtn.size = size;
+}
+
+void addMsgDisplay(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer) {
+  glm::vec2 size = glm::vec2(160.0f, 40.0f);
+  glm::vec3 pos = glm::vec3(-300.0f, 280.0f, 10.0f);
+  Gfx::Primitive tile = Gfx::rect2d(size.x, size.y, 0.0f);
+
+  SDL_GPUTexture *txtx = renderer->createTextTexture(
+    "Player 1's turn", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLACK,
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 240, 60
+  );
+
+  int objId = renderer->addObject(tile);
+  renderer->updateObjectTexture(objId, txtx, size);
+  Gfx::RenderObject& obj = renderer->getMutableObject(objId);
+  obj.pos = pos;
+
+  msgDisplay.objectId = objId;
+  msgDisplay.position = pos;
 }
 
 glm::vec2 getCursorWorldSpace(glm::vec2 mousePos, glm::vec2 screenSize) {
@@ -125,11 +156,10 @@ glm::vec2 getCursorWorldSpace(glm::vec2 mousePos, glm::vec2 screenSize) {
 }
 
 // 0: none, 1: rock, 2: paper, 3: scissors
-int findMouseOverRps(glm::vec2 cursorPos, PlayerTiles activePlayer) {
-  glm::vec3 cPos = glm::vec3(cursorPos.x, cursorPos.y, 0.0);
-  if (glm::distance(cPos, activePlayer.rock.position) < 40.0f) return 1;
-  if (glm::distance(cPos, activePlayer.paper.position) < 40.0f) return 2;
-  if (glm::distance(cPos, activePlayer.scissors.position) < 40.0f) return 3;
+int findMouseOverRps(glm::vec2 cursorPos, PlayerTiles& activePlayer) {
+  if (activePlayer.rock.isCoordInsideTile(cursorPos)) return 1;
+  if (activePlayer.paper.isCoordInsideTile(cursorPos)) return 2;
+  if (activePlayer.scissors.isCoordInsideTile(cursorPos)) return 3;
   return 0;
 }
 
@@ -164,6 +194,14 @@ bool isSelfColliding(PlayerTiles const &player, int activeId, glm::vec3 const &t
   return false;
 }
 
+void updateDisplayText(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer, std::string text) {
+  SDL_GPUTexture *txtx = renderer->createTextTexture(
+    text, glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLACK,
+    SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, 240, 60
+  );
+  renderer->updateObjectTexture(msgDisplay.objectId, txtx, glm::vec2(160.0f, 40.0f));
+}
+
 #pragma endregion helpers
 
 BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine) : Scene() {
@@ -174,10 +212,12 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
   };
   renderer->enableTextGeneration(SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, textEngine, "assets/font.ttf", 24);
 
+  // add render assets
   addBoardTiles(boardTiles, renderer);
   addPlayerTiles(players[0], 1, renderer);
   addPlayerTiles(players[1], 2, renderer);
-  addResetButton(renderer);
+  addResetButton(resetBtn, renderer);
+  addMsgDisplay(msgDisplay, renderer);
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
@@ -296,14 +336,22 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       bool gameEnded = false;
       if (activePlayer == 0 && targetPos.x == 200.0f) {
         SDL_Log("Player 1 wins");
+        updateDisplayText(msgDisplay, renderer, "Player 1 WINS!");
         gameEnded = true;
       } else if (activePlayer == 1 && targetPos.x == -200.0f) {
         SDL_Log("Player 2 wins");
+        updateDisplayText(msgDisplay, renderer, "Player 2 WINS!");
         gameEnded = true;
       }
       // switch active player
       if (targetPos != activeTileStartingPos) {
         SDL_Log("Switching active player");
+        if (!gameEnded && inactivePlayer == 0) {
+          updateDisplayText(msgDisplay, renderer, "Player 1's turn");
+        }
+        if (!gameEnded && inactivePlayer == 1) {
+          updateDisplayText(msgDisplay, renderer, "Player 2's turn");
+        }
         activePlayer = gameEnded ? 99 : inactivePlayer;
       }
     }
@@ -312,9 +360,8 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
   // 4. handle UI interaction
   else if (sys.mouseClickState == MouseClickState::UP && activeTile == NULL) {
     // check for reset btn click
-    glm::vec3 targetPos = glm::vec3(cursorPos.x, cursorPos.y, 10.0);
-    float distFromResetBtn = glm::length(glm::vec3(0.0f, 300.0f, 10.0f) - targetPos);
-    if (distFromResetBtn < 40.0) {
+    if (resetBtn.isCoordInsideTile(cursorPos)) {
+      updateDisplayText(msgDisplay, renderer, "Player 1's turn");
       resetGameState();
     }
   }
