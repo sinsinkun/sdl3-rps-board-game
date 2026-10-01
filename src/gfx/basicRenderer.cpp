@@ -7,8 +7,7 @@ BasicRenderer::BasicRenderer(
   SDL_GPUDevice *gpu,
   GPUPrimitiveType type,
   SDL_GPUCullMode cullMode,
-  Uint32 sw,
-  Uint32 sh
+  glm::vec2 winSize
 ) {
   device = gpu;
   // create shaders
@@ -37,7 +36,7 @@ BasicRenderer::BasicRenderer(
 			.cull_mode = cullMode,
 		},
     .depth_stencil_state = SDL_GPUDepthStencilState {
-      .compare_op = SDL_GPU_COMPAREOP_LESS,
+      .compare_op = SDL_GPU_COMPAREOP_LESS_OR_EQUAL,
       .write_mask = 0xFF,
       .enable_depth_test = true,
       .enable_depth_write = true,
@@ -60,17 +59,6 @@ BasicRenderer::BasicRenderer(
       .has_depth_stencil_target = true,
 		},
 	});
-
-  // create depth texture
-  depthTx = SDL_CreateGPUTexture(device, new SDL_GPUTextureCreateInfo {
-    .type = SDL_GPU_TEXTURETYPE_2D,
-    .format = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
-    .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,
-    .width = sw,
-    .height = sh,
-    .layer_count_or_depth = 1,
-    .num_levels = 1,
-  });
 
   // release shaders
 	SDL_ReleaseGPUShader(device, vertShader);
@@ -140,19 +128,26 @@ void BasicRenderer::enableTextGeneration(
   SDL_ReleaseGPUShader(device, fragShader);
 }
 
-void BasicRenderer::resizeScreen(Uint32 w, Uint32 h) {
+void BasicRenderer::resizeCanvas(glm::vec2 const &winSize) {
   SDL_ReleaseGPUTexture(device, depthTx);
   depthTx = SDL_CreateGPUTexture(device, new SDL_GPUTextureCreateInfo {
     .type = SDL_GPU_TEXTURETYPE_2D,
     .format = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
     .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,
-    .width = w,
-    .height = h,
+    .width = (Uint32)winSize.x,
+    .height = (Uint32)winSize.y,
     .layer_count_or_depth = 1,
     .num_levels = 1,
   });
-  cam.viewWidth = (float)w;
-  cam.viewHeight = (float)h;
+  cam.viewWidth = winSize.x;
+  cam.viewHeight = winSize.y;
+}
+
+void BasicRenderer::updateWindowSize(glm::vec2 const &winSize) {
+  if (winSize.x != winSizeCache.x || winSize.y != winSizeCache.y) {
+    resizeCanvas(winSize);
+    winSizeCache = winSize;
+  }
 }
 
 int BasicRenderer::addObject(std::vector<RenderVertex> const &vertices) {
@@ -542,8 +537,7 @@ SDL_GPUTexture* BasicRenderer::createTextTexture(
   SDL_FColor textColor,
   SDL_FColor backgroundColor,
   SDL_GPUTextureFormat textureFormat,
-  Uint32 textureWidth,
-  Uint32 textureHeight
+  glm::vec2 textureSize
 ) {
   // check for pre-requisite systems
   if (textEngine == NULL || textFont == NULL) {
@@ -561,8 +555,8 @@ SDL_GPUTexture* BasicRenderer::createTextTexture(
     .type = SDL_GPU_TEXTURETYPE_2D,
     .format = textureFormat,
     .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
-    .width = textureWidth,
-    .height = textureHeight,
+    .width = (Uint32)textureSize.x,
+    .height = (Uint32)textureSize.y,
     .layer_count_or_depth = 1,
     .num_levels = 1,
   });
@@ -614,8 +608,7 @@ SDL_GPUTexture* BasicRenderer::createTextTexture(
     .offset = 0,
   }, SDL_GPU_INDEXELEMENTSIZE_16BIT);
 
-  glm::vec2 targetSize = glm::vec2((float)textureWidth, (float)textureHeight);
-  SDL_PushGPUVertexUniformData(cmdBuf, 0, &targetSize, sizeof(glm::vec2));
+  SDL_PushGPUVertexUniformData(cmdBuf, 0, &textureSize, sizeof(glm::vec2));
   // dynamically offset buffers for each glyph
   int index_offset = 0, vertex_offset = 0;
   SDL_PushGPUFragmentUniformData(cmdBuf, 0, &textColor, sizeof(SDL_FColor));
@@ -645,6 +638,9 @@ RenderObject& BasicRenderer::getMutableObject(int id) {
 }
 
 void BasicRenderer::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target) {
+  if (depthTx == NULL) {
+    SDL_Log("Critical Error: Depth texture not found. Call updateWindowSize() in update() before rendering");
+  }
   SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmdBuf, new SDL_GPUColorTargetInfo {
 		.texture = target,
 		.clear_color = clearColor,

@@ -15,8 +15,7 @@ namespace Gfx {
       SDL_GPUDevice *gpu,
       Gfx::GPUPrimitiveType type,
       SDL_GPUCullMode cullMode,
-      Uint32 screenWidth,
-      Uint32 screenHeight
+      glm::vec2 winSize
     );
     // the targetFormat need to match the format of the text textures
     void enableTextGeneration(
@@ -25,7 +24,10 @@ namespace Gfx {
       std::string fontPath,
       float fontSize
     );
-    void resizeScreen(Uint32 w, Uint32 h);
+    void resizeCanvas(glm::vec2 const &winSize);
+    // this MUST be called in the update step - the internal renderer window size
+    // needs to be kept consistent with the actual window size
+    void updateWindowSize(glm::vec2 const &winSize);
     int addObject(std::vector<Gfx::RenderVertex> const &vertices);
     int addObject(std::vector<Gfx::RenderVertex> const &vertices, std::vector<Uint16> const &indices);
     int addObject(Gfx::Primitive const &shape);
@@ -43,8 +45,7 @@ namespace Gfx {
       SDL_FColor textColor,
       SDL_FColor backgroundColor,
       SDL_GPUTextureFormat textureFormat,
-      Uint32 textureWidth,
-      Uint32 textureHeight
+      glm::vec2 textureSize
     );
     Gfx::RenderObject& getMutableObject(int id);
     void render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* target);
@@ -53,6 +54,7 @@ namespace Gfx {
     Gfx::RenderCamera cam;
     SDL_FColor clearColor = SDL_FColor{ 0.02f, 0.02f, 0.08f, 1.0f };
   private:
+    glm::vec2 winSizeCache = glm::vec2(0.0f);
     std::vector<Gfx::RenderObject> renderObjects;
     SDL_GPUDevice *device = NULL;
     SDL_GPUGraphicsPipeline *pipeline = NULL;

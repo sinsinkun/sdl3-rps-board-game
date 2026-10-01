@@ -20,7 +20,7 @@ SDL_AppResult initSDLSystems(AppState& state) {
     SDL_VERSIONNUM_MICRO(SDL_VERSION)
   );
 
-  state.window = SDL_CreateWindow("SDL3 Vulkan", 800, 600, SDL_WINDOW_RESIZABLE);
+  state.window = SDL_CreateWindow("RPS Board Game", 800, 600, SDL_WINDOW_RESIZABLE);
   if (!state.window) {
     SDL_Log("SDL_CreateWindow() failed: %s", SDL_GetError());
     return SDL_APP_FAILURE;
