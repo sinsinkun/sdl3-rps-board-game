@@ -68,6 +68,7 @@ namespace App {
     BoardTile rock;
     BoardTile paper;
     BoardTile scissors;
+    int tilesLeft = 3;
   };
   class BoardScene: public Scene {
   public:
