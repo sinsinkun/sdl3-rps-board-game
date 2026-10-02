@@ -6,6 +6,9 @@ namespace App {
   enum Rps {
     RPS_NONE, ROCK, PAPER, SCISSORS
   };
+  enum EndState {
+    CONTINUE, P1_TURN, P2_TURN, P1_WIN, P2_WIN
+  };
   // note: this is in [y][x] format due to how arrays work
   const glm::vec3 tilePositions[5][5] = {
     glm::vec3 {-200.0, 200.0, 0.0},

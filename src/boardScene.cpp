@@ -191,6 +191,24 @@ Rps opponentAtTargetPos(glm::vec3 const &targetPos, PlayerTiles &opponent) {
   return Rps::RPS_NONE;
 }
 
+EndState checkForEndState(glm::vec3 const &targetPos, int activePlayer, PlayerTiles const players[2]) {
+  // pass on no active player
+  if (activePlayer == 99) return EndState::CONTINUE;
+  // condition 1: player 1 crossed into victory zone
+  if (activePlayer == 0 && targetPos.x == 200.0f) return EndState::P1_WIN;
+  // condition 2: player 2 is out of pieces
+  if (players[1].tilesLeft < 1) return EndState::P1_WIN;
+  // condition 3: player 2 crossed into victory zone
+  if (activePlayer == 1 && targetPos.x == -200.0f) return EndState::P2_WIN;
+  // condition 4: player 1 is out of pieces
+  if (players[0].tilesLeft < 1) return EndState::P2_WIN;
+  // if no one won:
+  if (activePlayer == 0) return EndState::P2_TURN;
+  if (activePlayer == 1) return EndState::P1_TURN;
+  // no valid end conditions?
+  return EndState::CONTINUE;
+}
+
 #pragma endregion helpers
 
 BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine) : Scene() {
@@ -207,6 +225,8 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
   addPlayerTiles(players[1], 2, renderer);
   addResetButton(resetBtn, renderer);
   addMsgDisplay(msgDisplay, renderer);
+
+  SDL_Log("Game start");
 }
 
 SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
@@ -310,26 +330,29 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       activeTile->position = targetPos;
       Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
       obj.pos = targetPos;
-      // check for win conditions
-      bool gameEnded = false;
-      if ((activePlayer == 0 && targetPos.x == 200.0f) || players[1].tilesLeft < 1) {
-        SDL_Log("Player 1 wins");
-        updateDisplayText(msgDisplay, renderer, "Player 1 WINS!");
-        gameEnded = true;
-      } else if ((activePlayer == 1 && targetPos.x == -200.0f) || players[0].tilesLeft < 1) {
-        SDL_Log("Player 2 wins");
-        updateDisplayText(msgDisplay, renderer, "Player 2 WINS!");
-        gameEnded = true;
-      }
-      // switch active player
-      if (targetPos != activeTileStartingPos) {
-        if (!gameEnded && inactivePlayer == 0) {
+      // check for end state
+      switch (checkForEndState(targetPos, activePlayer, players)) {
+        case EndState::P1_TURN:
           updateDisplayText(msgDisplay, renderer, "Player 1's turn");
-        }
-        if (!gameEnded && inactivePlayer == 1) {
+          activePlayer = 0;
+          break;
+        case EndState::P2_TURN:
           updateDisplayText(msgDisplay, renderer, "Player 2's turn");
-        }
-        activePlayer = gameEnded ? 99 : inactivePlayer;
+          activePlayer = 1;
+          break;
+        case EndState::P1_WIN:
+          SDL_Log("Player 1 wins");
+          updateDisplayText(msgDisplay, renderer, "Player 1 WINS!");
+          activePlayer = 99;
+          break;
+        case EndState::P2_WIN:
+          SDL_Log("Player 2 wins");
+          updateDisplayText(msgDisplay, renderer, "Player 2 WINS!");
+          activePlayer = 99;
+          break;
+        case EndState::CONTINUE:
+        default:
+          break;
       }
     }
     activeTile = NULL;
@@ -389,6 +412,7 @@ void BoardScene::resetGameState() {
   // reset active player
   activePlayer = 0;
   activeTile = NULL;
+  SDL_Log("Reset board state");
 }
 
 void BoardScene::destroy() {
