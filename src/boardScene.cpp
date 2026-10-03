@@ -32,12 +32,12 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
   glm::vec3 rockPos = playerPositions[0];
   glm::vec3 paperPos = playerPositions[1];
   glm::vec3 scissorsPos = playerPositions[2];
-  SDL_FColor bgColor = Gfx::PURPLE;
+  SDL_FColor bgColor = Gfx::rgb(134, 86, 13);
   if (variation == 2) {
     rockPos = playerPositions[3];
     paperPos = playerPositions[4];
     scissorsPos = playerPositions[5];
-    bgColor = Gfx::ORANGE;
+    bgColor = Gfx::rgb(80, 16, 139);
   }
 
   SDL_GPUTexture *rockTxt = renderer->createTextTexture(
@@ -80,11 +80,11 @@ void addPlayerTiles(PlayerTiles& playerTiles, int variation, Gfx::BasicRenderer 
 
 void addResetButton(BoardTile& resetBtn, Gfx::BasicRenderer *renderer) {
   glm::vec2 size = glm::vec2(120.0f, 40.0f);
-  glm::vec3 pos = glm::vec3(0.0f, 280.0f, 10.0f);
+  glm::vec3 pos = glm::vec3(0.0f, 275.0f, 10.0f);
   Gfx::Primitive tile = Gfx::rect2d(size.x, size.y, 0.0f);
 
   SDL_GPUTexture *txtx = renderer->createTextTexture(
-    "Reset", glm::vec3(30.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLUE,
+    "Reset", glm::vec3(30.0, 8.0, 0.0), Gfx::WHITE, Gfx::rgb(145, 39, 39),
     SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, size
   );
 
@@ -191,7 +191,7 @@ Rps opponentAtTargetPos(glm::vec3 const &targetPos, PlayerTiles &opponent) {
   return Rps::RPS_NONE;
 }
 
-EndState checkForEndState(glm::vec3 const &targetPos, int activePlayer, PlayerTiles const players[2]) {
+EndState checkForEndState(glm::vec3 const &targetPos, int activePlayer, PlayerTiles const players[2], bool positionReset) {
   // pass on no active player
   if (activePlayer == 99) return EndState::CONTINUE;
   // condition 1: player 1 crossed into victory zone
@@ -203,9 +203,9 @@ EndState checkForEndState(glm::vec3 const &targetPos, int activePlayer, PlayerTi
   // condition 4: player 1 is out of pieces
   if (players[0].tilesLeft < 1) return EndState::P2_WIN;
   // if no one won:
-  if (activePlayer == 0) return EndState::P2_TURN;
-  if (activePlayer == 1) return EndState::P1_TURN;
-  // no valid end conditions?
+  if (!positionReset && activePlayer == 0) return EndState::P2_TURN;
+  if (!positionReset && activePlayer == 1) return EndState::P1_TURN;
+  // retake turn
   return EndState::CONTINUE;
 }
 
@@ -229,13 +229,18 @@ BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TT
   SDL_Log("Game start");
 }
 
-SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
+UpdateResult BoardScene::update(SystemUpdates const &sys) {
+  UpdateResult res;
   renderer->updateWindowSize(sys.winSize);
   // handle inputs
   glm::vec2 cursorPos = getCursorWorldSpace(sys.mousePosScreenSpace, sys.winSize);
   Rps rps = findMouseOverRps(cursorPos, players[activePlayer]);
+  // change cursor on hover
+  if (rps != Rps::RPS_NONE || resetBtn.isCoordInsideTile(cursorPos)) {
+    res.cursorStyle = CursorType::C_POINTER;
+  }
   // 1. find active file
-  if (sys.mouseClickState == MouseClickState::DOWN && activeTile == NULL) {
+  if (sys.mouseClickState == MouseClickState::M_DOWN && activeTile == NULL) {
     if (activePlayer == 0 || activePlayer == 1) {
       switch (rps) {
         case Rps::ROCK:
@@ -256,7 +261,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     }
   }
   // 2. handle movement of active tile
-  else if (sys.mouseClickState == MouseClickState::DOWN && activeTile != NULL) {
+  else if (sys.mouseClickState == MouseClickState::M_DOWN && activeTile != NULL) {
     glm::vec3 targetPos = glm::vec3(cursorPos.x, cursorPos.y, 1.0);
     activeTile->position = targetPos;
     Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
@@ -264,7 +269,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     obj.pos = glm::vec3(targetPos.x, targetPos.y, 2.0);
   }
   // 3. handle dropping of active tile
-  else if (sys.mouseClickState == MouseClickState::UP && activeTile != NULL) {
+  else if (sys.mouseClickState == MouseClickState::M_UP && activeTile != NULL) {
     BoardTile* nearestTile = findNearestBoardTile(activeTile, boardTiles);
     // reset to original position if nearestTile not found
     if (nearestTile == NULL) {
@@ -278,18 +283,25 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     } else {
       glm::vec3 targetPos = glm::vec3(nearestTile->position.x, nearestTile->position.y, 1.0);
       int inactivePlayer = activePlayer == 0 ? 1 : 0;
+      bool positionReset = false;
+      // check if tile moved
+      if (targetPos == activeTileStartingPos) {
+        positionReset = true;
+      }
       // prevent collision with own tiles
-      if (isSelfColliding(players[activePlayer], activeTile->objectId, targetPos)) {
+      else if (isSelfColliding(players[activePlayer], activeTile->objectId, targetPos)) {
         SDL_Log("Colliding with self - resetting position");
         targetPos = activeTileStartingPos;
+        positionReset = true;
       }
       // prevent moving to invalid position
-      if (glm::length(targetPos - activeTileStartingPos) > 100.0f) {
+      else if (glm::length(targetPos - activeTileStartingPos) > 100.0f) {
         SDL_Log("Invalid target position (%.2f, %.2f, %.2f) -> (%.2f, %.2f, %.2f)",
           activeTileStartingPos.x, activeTileStartingPos.y, activeTileStartingPos.z,
           targetPos.x, targetPos.y, targetPos.z
         );
         targetPos = activeTileStartingPos;
+        positionReset = true;
       }
       // resolve collision with opponent tiles
       Rps opp = opponentAtTargetPos(targetPos, players[inactivePlayer]);
@@ -298,6 +310,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
           case Rps::ROCK:
             if (opp == Rps::ROCK) {
               targetPos = activeTileStartingPos;
+              positionReset = true;
             } else if (opp == Rps::PAPER) {
               deactivateTile(activeTile, renderer, players[activePlayer].tilesLeft);
             } else if (opp == Rps::SCISSORS) {
@@ -309,6 +322,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
               deactivateTile(&players[inactivePlayer].rock, renderer, players[inactivePlayer].tilesLeft);
             } else if (opp == Rps::PAPER) {
               targetPos = activeTileStartingPos;
+              positionReset = true;
             } else if (opp == Rps::SCISSORS) {
               deactivateTile(activeTile, renderer, players[activePlayer].tilesLeft);
             }
@@ -320,6 +334,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
               deactivateTile(&players[inactivePlayer].paper, renderer, players[inactivePlayer].tilesLeft);
             } else if (opp == Rps::SCISSORS) {
               targetPos = activeTileStartingPos;
+              positionReset = true;
             }
             break;
           default:
@@ -331,7 +346,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
       Gfx::RenderObject& obj = renderer->getMutableObject(activeTile->objectId);
       obj.pos = targetPos;
       // check for end state
-      switch (checkForEndState(targetPos, activePlayer, players)) {
+      switch (checkForEndState(targetPos, activePlayer, players, positionReset)) {
         case EndState::P1_TURN:
           updateDisplayText(msgDisplay, renderer, "Player 1's turn");
           activePlayer = 0;
@@ -358,7 +373,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     activeTile = NULL;
   }
   // 4. handle UI interaction
-  else if (sys.mouseClickState == MouseClickState::UP && activeTile == NULL) {
+  else if (sys.mouseClickState == MouseClickState::M_UP && activeTile == NULL) {
     // check for reset btn click
     if (resetBtn.isCoordInsideTile(cursorPos)) {
       updateDisplayText(msgDisplay, renderer, "Player 1's turn");
@@ -366,7 +381,7 @@ SDL_AppResult BoardScene::update(SystemUpdates const &sys) {
     }
   }
 
-  return SDL_APP_CONTINUE;
+  return res;
 }
 
 SDL_AppResult BoardScene::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screen) {

@@ -72,6 +72,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     return SDL_APP_FAILURE;
   }
 
+  // load system cursors
+  state.cursors.push_back(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT));
+  state.cursors.push_back(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_POINTER));
+  state.cursors.push_back(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT));
+  state.cursors.push_back(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_MOVE));
+  state.cursors.push_back(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_PROGRESS));
+
   // load scene into memory
   SDL_GPUTextureFormat scFormat = SDL_GetGPUSwapchainTextureFormat(state.gpu, state.window);
   BoardScene *scene1 = new BoardScene(state.gpu, scFormat, state.textEngine);
@@ -104,10 +111,10 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
       state.sys.mousePosScreenSpace = glm::vec2(event->motion.x, event->motion.y);
       break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-      state.sys.mouseClickState = MouseClickState::DOWN;
+      state.sys.mouseClickState = MouseClickState::M_DOWN;
       break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
-      state.sys.mouseClickState = MouseClickState::UP;
+      state.sys.mouseClickState = MouseClickState::M_UP;
       break;
     default:
       break;
@@ -147,8 +154,18 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
       SDL_Log("Tried to access scene index greater than scenes length");
       return SDL_APP_CONTINUE;
     }
-    SDL_AppResult res = state.scenes.at(state.currentScene)->update(state.sys);
-    if (res != SDL_APP_CONTINUE) return res;
+    UpdateResult res = state.scenes.at(state.currentScene)->update(state.sys);
+    if (res.appResult != SDL_APP_CONTINUE) {
+      return res.appResult;
+    }
+    if (res.cursorStyle != state.currentCursor) {
+      state.currentCursor = res.cursorStyle;
+      // match cursorType enum to array index
+      int idx = static_cast<int>(res.cursorStyle);
+      if (idx < state.cursors.size()) {
+        SDL_SetCursor(state.cursors.at(idx));
+      }
+    }
   }
 
   // events are asynchronous, so we have to clean up keysPressed per frame
@@ -157,8 +174,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
       state.sys.keysPressed.erase(key);
     }
   }
-  if (state.sys.mouseClickState == MouseClickState::UP) {
-    state.sys.mouseClickState = MouseClickState::NONE;
+  if (state.sys.mouseClickState == MouseClickState::M_UP) {
+    state.sys.mouseClickState = MouseClickState::M_NONE;
   }
 
   // ---------------------------------------------
@@ -214,6 +231,11 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
   // destroy text engine
   TTF_DestroyGPUTextEngine(state.textEngine);
   TTF_Quit();
+
+  // free cursors
+  for (SDL_Cursor *cursor : state.cursors) {
+    SDL_DestroyCursor(cursor);
+  }
 
   SDL_ReleaseWindowFromGPUDevice(state.gpu, state.window);
   SDL_DestroyGPUDevice(state.gpu);

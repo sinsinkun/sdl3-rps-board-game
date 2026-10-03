@@ -76,7 +76,7 @@ namespace App {
   class BoardScene: public Scene {
   public:
     BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine);
-    SDL_AppResult update(SystemUpdates const &sys) override;
+    UpdateResult update(SystemUpdates const &sys) override;
     SDL_AppResult render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* screenTx) override;
     void resetGameState();
     void destroy() override;
