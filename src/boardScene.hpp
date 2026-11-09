@@ -3,6 +3,7 @@
 #include "app.hpp"
 
 namespace App {
+  const SDL_FColor bgColor = Gfx::rgb(15, 23, 29);
   enum Rps {
     RPS_NONE, ROCK, PAPER, SCISSORS
   };

@@ -104,7 +104,7 @@ void addMsgDisplay(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer) {
   Gfx::Primitive tile = Gfx::rect2d(size.x, size.y, 0.0f);
 
   SDL_GPUTexture *txtx = renderer->createTextTexture(
-    "Player 1's turn", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLACK,
+    "Player 1's turn", glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, bgColor,
     SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, (1.5f * size)
   );
 
@@ -119,7 +119,7 @@ void addMsgDisplay(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer) {
 
 void updateDisplayText(BoardTile& msgDisplay, Gfx::BasicRenderer *renderer, std::string text) {
   SDL_GPUTexture *txtx = renderer->createTextTexture(
-    text, glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, Gfx::BLACK,
+    text, glm::vec3(10.0, 10.0, 0.0), Gfx::WHITE, bgColor,
     SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, glm::vec2(240.0f, 60.0f)
   );
   renderer->updateObjectTexture(msgDisplay.objectId, txtx, glm::vec2(160.0f, 40.0f));
@@ -214,6 +214,7 @@ EndState checkForEndState(glm::vec3 const &targetPos, int activePlayer, PlayerTi
 BoardScene::BoardScene(SDL_GPUDevice *gpu, SDL_GPUTextureFormat targetFormat, TTF_TextEngine *textEngine) : Scene() {
   // initialize gpu pipeline
   renderer = new Gfx::BasicRenderer(targetFormat, gpu, Gfx::PT_Triangle, SDL_GPU_CULLMODE_BACK, glm::vec2(800.0f, 600.0f));
+  renderer->clearColor = bgColor;
   renderer->cam = Gfx::RenderCamera {
     .perspective = false
   };
@@ -393,6 +394,7 @@ SDL_AppResult BoardScene::render(SDL_GPUCommandBuffer *cmdBuf, SDL_GPUTexture* s
 
 void BoardScene::resetGameState() {
   // reset player 1
+  players[0].tilesLeft = 3;
   players[0].rock.position = playerPositions[0];
   Gfx::RenderObject& rock1 = renderer->getMutableObject(players[0].rock.objectId);
   rock1.pos = playerPositions[0];
@@ -409,6 +411,7 @@ void BoardScene::resetGameState() {
   scissors1.visible = true;
 
   // reset player 2
+  players[1].tilesLeft = 3;
   players[1].rock.position = playerPositions[3];
   Gfx::RenderObject& rock2 = renderer->getMutableObject(players[1].rock.objectId);
   rock2.pos = playerPositions[3];
